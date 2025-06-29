@@ -15,7 +15,8 @@ import {
   Pie,
   Cell
 } from 'recharts'
-import PageTransition from '../components/PageTransition'
+import PageTransition from "../../components/PageTransition";
+
 import { motion } from 'framer-motion'
 
 export default function Dashboard() {

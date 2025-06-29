@@ -1,20 +1,21 @@
 import { createBrowserRouter } from 'react-router-dom'
 import Layout from '../layout/Layout'
-import Dashboard from '../pages/Dashboard'
-import Productos from '../pages/Productos'
-import Ventas from '../pages/Ventas'
-import Insumos from '../pages/Insumos'
-import Produccion from '../pages/Produccion'
-import Pedidos from '../pages/Pedidos'
-import Usuarios from '../pages/Usuarios'
+import Dashboard from '../pages/dashboard/index'
+import Productos from '../pages/productos/index'
+import EditarProducto from '../pages/productos/EditarProducto'
+import Ventas from '../pages/ventas/index'
+import Insumos from '../pages/insumos/index'
+import Produccion from '../pages/produccion/index'
+import Pedidos from '../pages/pedidos/index'
+import Usuarios from '../pages/usuarios/index'
 import Reportes from '../pages/Reportes'
-import ReporteDetalle from '../pages/ReporteDetalle'
-import ReporteGeneral from '../pages/ReporteGeneral'
-import ReporteVentas from '../pages/ReporteVentas'
-import ReporteProduccion from '../pages/ReporteProduccion'
-import ReportePedidos from '../pages/ReportePedidos'
-import ReporteInventario from '../pages/ReporteInventario'
-import Login from '../pages/Login'
+import ReporteDetalle from '../pages/reportes/ReporteDetalle'
+import ReporteGeneral from '../pages/reportes/ReporteGeneral'
+import ReporteVentas from '../pages/reportes/ReporteVentas'
+import ReporteProduccion from '../pages/reportes/ReporteProduccion'
+import ReportePedidos from '../pages/reportes/ReportePedidos'
+import ReporteInventario from '../pages/reportes/ReporteInventario'
+import Login from '../pages/login/index'
 
 export const router = createBrowserRouter([
   {
@@ -32,6 +33,10 @@ export const router = createBrowserRouter([
       {
         path: 'productos',
         element: <Productos />
+      },
+      {
+        path: 'productos/editar/:id', // 👈 nueva ruta para edición
+        element: <EditarProducto />
       },
       {
         path: 'ventas',
@@ -78,7 +83,7 @@ export const router = createBrowserRouter([
         element: <ReporteInventario />
       },
       {
-        path: 'reportes/:tipo', // ruta dinámica (opcional si usas ReporteDetalle)
+        path: 'reportes/:tipo',
         element: <ReporteDetalle />
       }
     ]

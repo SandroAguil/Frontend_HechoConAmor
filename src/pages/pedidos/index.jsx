@@ -7,6 +7,8 @@ export default function Pedidos() {
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [busqueda, setBusqueda] = useState('')
   const [filtro, setFiltro] = useState('Todos')
+  const [pedidoEditandoEstado, setPedidoEditandoEstado] = useState(null)
+  const [pedidoEliminando, setPedidoEliminando] = useState(null)
 
   const [pedidos, setPedidos] = useState([
     {
@@ -48,6 +50,17 @@ export default function Pedidos() {
     // ✅ Notificación
     toast.success('Pedido registrado correctamente')
   }
+
+  const handleActualizarEstado = () => {
+  setPedidos(pedidos.map(p =>
+    p.codigo === pedidoEditandoEstado.codigo
+      ? { ...p, estado: pedidoEditandoEstado.estado }
+      : p
+  ))
+  toast.success('Estado actualizado correctamente')
+  setPedidoEditandoEstado(null)
+}
+
 
   return (
     <motion.div
@@ -123,14 +136,15 @@ export default function Pedidos() {
                     {pedido.estado}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-center flex justify-center gap-3">
-                  <button className="text-green-600 hover:text-green-800">
-                    <FaEye />
-                  </button>
-                  <button className="text-red-500 hover:text-red-700">
-                    <FaTrash />
-                  </button>
-                </td>
+<td className="px-4 py-3 text-center flex justify-center gap-3">
+  <button className="text-blue-500 hover:text-blue-700" onClick={() => setPedidoEditandoEstado(pedido)}>
+    ✏️
+  </button>
+  <button className="text-red-500 hover:text-red-700" onClick={() => setPedidoEliminando(pedido)}>
+    <FaTrash />
+  </button>
+</td>
+
               </tr>
             ))}
           </tbody>
@@ -202,6 +216,102 @@ export default function Pedidos() {
           </motion.div>
         )}
       </AnimatePresence>
+      <AnimatePresence>
+  {pedidoEditandoEstado && (
+    <motion.div
+      className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.div
+        className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md"
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.8, opacity: 0 }}
+      >
+        <h2 className="text-2xl font-bold mb-4 text-brandPrimary">Editar Estado</h2>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            handleActualizarEstado()
+          }}
+          className="space-y-4"
+        >
+          <select
+            value={pedidoEditandoEstado.estado}
+            onChange={(e) =>
+              setPedidoEditandoEstado({ ...pedidoEditandoEstado, estado: e.target.value })
+            }
+            className="w-full p-2 border rounded"
+          >
+            <option value="Pendiente">Pendiente</option>
+            <option value="En proceso">En proceso</option>
+            <option value="Entregado">Entregado</option>
+            <option value="Cancelado">Cancelado</option>
+          </select>
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setPedidoEditandoEstado(null)}
+              className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Guardar cambios
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
+
+<AnimatePresence>
+  {pedidoEliminando && (
+    <motion.div
+      className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.div
+        className="bg-white p-6 rounded-xl shadow-lg w-full max-w-sm text-center"
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.8, opacity: 0 }}
+      >
+        <h3 className="text-xl font-semibold mb-4 text-red-600">¿Eliminar pedido?</h3>
+        <p className="mb-6">
+          Estás a punto de eliminar el pedido de <strong>{pedidoEliminando.cliente}</strong>.
+        </p>
+        <div className="flex justify-center gap-4">
+          <button
+            onClick={() => setPedidoEliminando(null)}
+            className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={() => {
+              setPedidos(pedidos.filter(p => p.codigo !== pedidoEliminando.codigo))
+              setPedidoEliminando(null)
+              toast.success('Pedido eliminado correctamente')
+            }}
+            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+          >
+            Eliminar
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
+  
     </motion.div>
   )
 }
