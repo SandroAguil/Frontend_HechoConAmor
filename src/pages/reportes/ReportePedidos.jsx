@@ -1,16 +1,28 @@
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import {
+  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer
+} from 'recharts'
 import { motion } from 'framer-motion'
+import { FaFilePdf, FaFileExcel } from 'react-icons/fa'
 
-const resumenPedidos = [
+const resumen = [
   { estado: 'Pendiente', cantidad: 8 },
-  { estado: 'Completado', cantidad: 15 },
-  { estado: 'Cancelado', cantidad: 4 }
+  { estado: 'Enviado', cantidad: 12 },
+  { estado: 'Entregado', cantidad: 25 }
 ]
 
 const pedidos = [
-  { id: 'PED001', cliente: 'Ana Torres', fecha: '2025-06-15', total: 'S/ 95.00', estado: 'Pendiente' },
-  { id: 'PED002', cliente: 'Luis García', fecha: '2025-06-14', total: 'S/ 130.00', estado: 'Completado' },
-  { id: 'PED003', cliente: 'Lucía Pérez', fecha: '2025-06-13', total: 'S/ 78.00', estado: 'Cancelado' }
+  { id: 'PED001', cliente: 'Carlos Ruiz', fecha: '2025-06-12', total: 150 },
+  { id: 'PED002', cliente: 'Lucía Gómez', fecha: '2025-06-13', total: 80 },
+  { id: 'PED003', cliente: 'Jorge Díaz', fecha: '2025-06-14', total: 120 }
+]
+
+const datosPedidosMensuales = [
+  { mes: 'Ene', pedidos: 10 },
+  { mes: 'Feb', pedidos: 8 },
+  { mes: 'Mar', pedidos: 15 },
+  { mes: 'Abr', pedidos: 9 },
+  { mes: 'May', pedidos: 11 },
+  { mes: 'Jun', pedidos: 17 }
 ]
 
 export default function ReportePedidos() {
@@ -23,29 +35,45 @@ export default function ReportePedidos() {
     >
       <h1 className="text-4xl font-bold text-brandPrimary">Reporte de Pedidos</h1>
 
-      {/* Tarjetas resumen */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Resumen title="Pedidos pendientes" value="8" color="bg-pastelMint" />
-        <Resumen title="Completados" value="15" color="bg-pastelBlue" />
-        <Resumen title="Cancelados" value="4" color="bg-pastelPink" />
+      {/* Botones de exportación */}
+      <div className="flex gap-4">
+        <button
+          onClick={() => alert('✅ Exportación a PDF simulada (implementación futura).')}
+          className="flex items-center gap-2 bg-red-100 text-red-700 px-4 py-2 rounded-lg hover:bg-red-200 transition"
+        >
+          <FaFilePdf /> Exportar PDF
+        </button>
+        <button
+          onClick={() => alert('✅ Exportación a Excel simulada (implementación futura).')}
+          className="flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-lg hover:bg-green-200 transition"
+        >
+          <FaFileExcel /> Exportar Excel
+        </button>
       </div>
 
-      {/* Gráfico de barras */}
+      {/* Tarjetas resumen */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Resumen title="Pendientes" value="8" color="bg-pastelPink" />
+        <Resumen title="Enviados" value="12" color="bg-pastelBlue" />
+        <Resumen title="Entregados" value="25" color="bg-pastelMint" />
+      </div>
+
+      {/* Gráfico mejorado */}
       <div className="bg-white p-6 rounded-xl shadow">
-        <h2 className="text-xl font-semibold mb-4 text-gray-800">Estado de Pedidos</h2>
+        <h2 className="text-xl font-semibold mb-4 text-gray-800">Pedidos por Mes</h2>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={resumenPedidos}>
-            <XAxis dataKey="estado" />
+          <AreaChart data={datosPedidosMensuales}>
+            <XAxis dataKey="mes" />
             <YAxis />
             <Tooltip />
-            <Bar dataKey="cantidad" fill="#f472b6" radius={[6, 6, 0, 0]} />
-          </BarChart>
+            <Area type="monotone" dataKey="pedidos" stroke="#a78bfa" fill="#ddd6fe" strokeWidth={2} />
+          </AreaChart>
         </ResponsiveContainer>
       </div>
 
       {/* Tabla de pedidos */}
       <div className="bg-white p-6 rounded-xl shadow overflow-x-auto">
-        <h2 className="text-xl font-semibold mb-4 text-gray-800">Pedidos recientes</h2>
+        <h2 className="text-xl font-semibold mb-4 text-gray-800">Últimos pedidos</h2>
         <table className="min-w-full text-sm">
           <thead className="bg-pastelLavender text-gray-700">
             <tr>
@@ -53,17 +81,15 @@ export default function ReportePedidos() {
               <th className="text-left px-4 py-3">Cliente</th>
               <th className="text-left px-4 py-3">Fecha</th>
               <th className="text-left px-4 py-3">Total</th>
-              <th className="text-left px-4 py-3">Estado</th>
             </tr>
           </thead>
           <tbody>
-            {pedidos.map((pedido) => (
-              <tr key={pedido.id} className="border-b hover:bg-pastelCream">
-                <td className="px-4 py-3">{pedido.id}</td>
-                <td className="px-4 py-3">{pedido.cliente}</td>
-                <td className="px-4 py-3">{pedido.fecha}</td>
-                <td className="px-4 py-3">{pedido.total}</td>
-                <td className="px-4 py-3">{pedido.estado}</td>
+            {pedidos.map((p) => (
+              <tr key={p.id} className="border-b hover:bg-pastelCream">
+                <td className="px-4 py-3">{p.id}</td>
+                <td className="px-4 py-3">{p.cliente}</td>
+                <td className="px-4 py-3">{p.fecha}</td>
+                <td className="px-4 py-3">S/ {p.total}</td>
               </tr>
             ))}
           </tbody>

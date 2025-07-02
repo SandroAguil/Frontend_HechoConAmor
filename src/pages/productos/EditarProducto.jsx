@@ -2,23 +2,23 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 
+
 export default function EditarProducto() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { productos, editarProducto } = useDatos()
   const [producto, setProducto] = useState(null)
   const [cargando, setCargando] = useState(false)
 
   useEffect(() => {
-    const productos = JSON.parse(localStorage.getItem('productos')) || []
     const productoEncontrado = productos.find(p => p.id === Number(id))
-
     if (!productoEncontrado) {
       toast.error('Producto no encontrado.')
       navigate('/productos')
     } else {
       setProducto(productoEncontrado)
     }
-  }, [id, navigate])
+  }, [id, productos, navigate])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -29,12 +29,7 @@ export default function EditarProducto() {
     e.preventDefault()
     setCargando(true)
 
-    const productos = JSON.parse(localStorage.getItem('productos')) || []
-    const actualizados = productos.map(p =>
-      p.id === producto.id ? producto : p
-    )
-
-    localStorage.setItem('productos', JSON.stringify(actualizados))
+    editarProducto(producto)
 
     setTimeout(() => {
       toast.success('Producto actualizado correctamente.')

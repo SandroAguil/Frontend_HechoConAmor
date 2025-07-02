@@ -13,7 +13,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <AuthProvider>
       <RouterProvider router={router} />
-      {/* ✅ Componente de notificaciones globales */}
       <ToastContainer
         position="top-right"
         autoClose={3000}

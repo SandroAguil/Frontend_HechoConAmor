@@ -1,12 +1,31 @@
 import { useState } from 'react'
-import { FaPlus, FaCheck, FaTrash } from 'react-icons/fa'
+import { FaPlus, FaCheck, FaTrash, FaEdit } from 'react-icons/fa'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-toastify'
+
 
 export default function Produccion() {
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [ordenEliminando, setOrdenEliminando] = useState(null)
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false)
+  const [modoEdicion, setModoEdicion] = useState(false)
+  const [ordenEditando, setOrdenEditando] = useState(null)
+
+const iniciarEdicion = (codigo) => {
+  const orden = ordenes.find((o) => o.codigo === codigo)
+  if (orden) {
+    setNuevaOrden({
+      producto: orden.producto,
+      fecha: orden.fecha,
+      cantidad: orden.cantidad,
+      estado: orden.estado
+    })
+    setInsumosUsados(orden.insumos || [])
+    setOrdenEditando(codigo)
+    setModoEdicion(true)
+    setMostrarFormulario(true)
+  }
+}
 
   
   const [ordenes, setOrdenes] = useState([
@@ -55,22 +74,40 @@ const insumosDisponibles = [
     setNuevaOrden({ ...nuevaOrden, [name]: value })
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
+const handleSubmit = (e) => {
+  e.preventDefault()
+
+  if (modoEdicion && ordenEditando) {
+    // Editar orden existente
+    const nuevasOrdenes = ordenes.map((orden) =>
+      orden.codigo === ordenEditando
+        ? { ...orden, ...nuevaOrden, insumos: insumosUsados }
+        : orden
+    )
+    setOrdenes(nuevasOrdenes)
+    toast.success("Orden actualizada correctamente")
+  } else {
+    // Nueva orden
     const codigo = `PRD${(ordenes.length + 1).toString().padStart(3, '0')}`
     setOrdenes([
-  ...ordenes,
-  {
-    ...nuevaOrden,
-    codigo,
-    insumos: insumosUsados
-  }
-])
+      ...ordenes,
+      {
+        ...nuevaOrden,
+        codigo,
+        insumos: insumosUsados
+      }
+    ])
     toast.success('Orden de producción registrada')
-    setNuevaOrden({ producto: '', fecha: '', cantidad: '', estado: 'En curso' })
-    setMostrarFormulario(false)
-    setInsumosUsados([])
   }
+
+  setNuevaOrden({ producto: '', fecha: '', cantidad: '', estado: 'En curso' })
+  setMostrarFormulario(false)
+  setInsumosUsados([])
+  setModoEdicion(false)
+  setOrdenEditando(null)
+}
+
+
 
 const eliminarOrden = (codigo) => {
   setOrdenes(ordenes.filter((orden) => orden.codigo !== codigo));
@@ -149,21 +186,21 @@ const eliminarOrden = (codigo) => {
                     {orden.estado}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-center flex justify-center gap-3">
-                  <button className="text-green-600 hover:text-green-800">
-                    <FaCheck />
-                  </button>
+<td className="px-4 py-3 text-center flex justify-center gap-3">
 <button
-  className="text-red-500 hover:text-red-700"
-  onClick={() => {
-    setOrdenEliminando(orden)
-    setMostrarConfirmacion(true)
-  }}
+  className="text-blue-600 hover:text-blue-800"
+  onClick={() => iniciarEdicion(orden.codigo)}
 >
-  <FaTrash />
+  <FaEdit />
 </button>
+  <button
+    className="text-red-500 hover:text-red-700"
+    onClick={() => eliminarOrden(orden.codigo)}
+  >
+    <FaTrash />
+  </button>
+</td>
 
-                </td>
               </tr>
             ))}
           </tbody>

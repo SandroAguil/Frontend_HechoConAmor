@@ -16,6 +16,9 @@ import ReporteProduccion from '../pages/reportes/ReporteProduccion'
 import ReportePedidos from '../pages/reportes/ReportePedidos'
 import ReporteInventario from '../pages/reportes/ReporteInventario'
 import Login from '../pages/login/index'
+import RutaProtegida from '../routes/RutaProtegida'
+
+
 
 export const router = createBrowserRouter([
   {
@@ -28,63 +31,123 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Dashboard />
+        element: (
+          <RutaProtegida rolesPermitidos={['administrador', 'vendedor']}>
+            <Dashboard />
+          </RutaProtegida>
+        )
       },
       {
         path: 'productos',
-        element: <Productos />
+        element: (
+          <RutaProtegida rolesPermitidos={['administrador']}>
+            <Productos />
+          </RutaProtegida>
+        )
       },
       {
-        path: 'productos/editar/:id', // 👈 nueva ruta para edición
-        element: <EditarProducto />
+        path: 'productos/editar/:id',
+        element: (
+          <RutaProtegida rolesPermitidos={['administrador']}>
+            <EditarProducto />
+          </RutaProtegida>
+        )
       },
       {
         path: 'ventas',
-        element: <Ventas />
+        element: (
+          <RutaProtegida rolesPermitidos={['administrador', 'vendedor']}>
+            <Ventas />
+          </RutaProtegida>
+        )
       },
       {
         path: 'produccion',
-        element: <Produccion />
+        element: (
+          <RutaProtegida rolesPermitidos={['administrador']}>
+            <Produccion />
+          </RutaProtegida>
+        )
       },
       {
         path: 'insumos',
-        element: <Insumos />
+        element: (
+          <RutaProtegida rolesPermitidos={['administrador']}>
+            <Insumos />
+          </RutaProtegida>
+        )
       },
       {
         path: 'pedidos',
-        element: <Pedidos />
+        element: (
+          <RutaProtegida rolesPermitidos={['administrador', 'vendedor']}>
+            <Pedidos />
+          </RutaProtegida>
+        )
       },
       {
         path: 'usuarios',
-        element: <Usuarios />
+        element: (
+          <RutaProtegida rolesPermitidos={['administrador']}>
+            <Usuarios />
+          </RutaProtegida>
+        )
       },
       {
         path: 'reportes',
-        element: <Reportes />
+        element: (
+          <RutaProtegida rolesPermitidos={['administrador', 'vendedor']}>
+            <Reportes />
+          </RutaProtegida>
+        )
       },
       {
         path: 'reportes/general',
-        element: <ReporteGeneral />
+        element: (
+          <RutaProtegida rolesPermitidos={['administrador']}>
+            <ReporteGeneral />
+          </RutaProtegida>
+        )
       },
       {
         path: 'reportes/ventas',
-        element: <ReporteVentas />
+        element: (
+          <RutaProtegida rolesPermitidos={['administrador', 'vendedor']}>
+            <ReporteVentas />
+          </RutaProtegida>
+        )
       },
       {
         path: 'reportes/produccion',
-        element: <ReporteProduccion />
+        element: (
+          <RutaProtegida rolesPermitidos={['administrador']}>
+            <ReporteProduccion />
+          </RutaProtegida>
+        )
       },
       {
         path: 'reportes/pedidos',
-        element: <ReportePedidos />
+        element: (
+          <RutaProtegida rolesPermitidos={['administrador']}>
+            <ReportePedidos />
+          </RutaProtegida>
+        )
       },
       {
         path: 'reportes/inventario',
-        element: <ReporteInventario />
+        element: (
+          <RutaProtegida rolesPermitidos={['administrador']}>
+            <ReporteInventario />
+          </RutaProtegida>
+        )
       },
       {
         path: 'reportes/:tipo',
-        element: <ReporteDetalle />
+        element: (
+          <RutaProtegida rolesPermitidos={['administrador']}>
+            <ReporteDetalle />
+          </RutaProtegida>
+        )
       }
     ]
   }

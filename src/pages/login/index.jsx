@@ -28,7 +28,7 @@ export default function Login() {
     }
 
     if (correo === adminEmail && password === adminPassword) {
-      login('administrador')
+      login('administrador', correo)
       navigate('/')
       return
     }
@@ -38,7 +38,7 @@ export default function Login() {
     )
 
     if (vendedorValido) {
-      login('vendedor')
+      login('vendedor', correo)
       navigate('/')
       return
     }

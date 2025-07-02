@@ -1,27 +1,77 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
+import { toast } from 'react-hot-toast'
 
 export default function Usuarios() {
   const [vendedores, setVendedores] = useState([
-    'vendedor1@gmail.com',
-    'vendedor2@gmail.com'
+    { correo: 'vendedor1@gmail.com', estado: 'activo', editando: false },
+    { correo: 'vendedor2@gmail.com', estado: 'bloqueado', editando: false }
   ])
   const [nuevoCorreo, setNuevoCorreo] = useState('')
   const [error, setError] = useState('')
+  const [modalVisible, setModalVisible] = useState(false)
+  const [correoAEliminar, setCorreoAEliminar] = useState(null)
 
-  const agregarVendedor = () => {
-    if (!nuevoCorreo.includes('@') || vendedores.includes(nuevoCorreo)) {
-      setError('Correo inválido o ya registrado.')
-      return
-    }
-
-    setVendedores([...vendedores, nuevoCorreo])
-    setNuevoCorreo('')
-    setError('')
+const agregarVendedor = () => {
+  if (!nuevoCorreo.includes('@') || vendedores.some(v => v.correo === nuevoCorreo)) {
+    setError('Correo inválido o ya registrado.')
+    return
   }
 
-  const eliminarVendedor = (correo) => {
-    setVendedores(vendedores.filter((v) => v !== correo))
+  const nuevoVendedor = {
+    correo: nuevoCorreo,
+    estado: 'activo',
+    editando: false
+  }
+
+  setVendedores([...vendedores, nuevoVendedor])
+  setNuevoCorreo('')
+  setError('')
+  toast.success('✅ Usuario agregado correctamente.')
+}
+
+
+  const iniciarEdicion = (index) => {
+    setVendedores(vendedores.map((v, i) =>
+      i === index ? { ...v, editando: true } : { ...v, editando: false }
+    ))
+  }
+
+  const guardarEdicion = (index, nuevoCorreo) => {
+    if (!nuevoCorreo.includes('@')) {
+      toast.error('Correo inválido.')
+      return
+    }
+    setVendedores(vendedores.map((v, i) =>
+      i === index ? { ...v, correo: nuevoCorreo, editando: false } : v
+    ))
+    toast.success('Correo actualizado.')
+  }
+
+  const cancelarEdicion = (index) => {
+    setVendedores(vendedores.map((v, i) =>
+      i === index ? { ...v, editando: false } : v
+    ))
+  }
+
+  const toggleEstado = (index) => {
+    setVendedores(vendedores.map((v, i) =>
+      i === index
+        ? { ...v, estado: v.estado === 'activo' ? 'bloqueado' : 'activo' }
+        : v
+    ))
+  }
+
+  const confirmarEliminacion = (correo) => {
+    setCorreoAEliminar(correo)
+    setModalVisible(true)
+  }
+
+  const eliminarVendedor = () => {
+    setVendedores(vendedores.filter(v => v.correo !== correoAEliminar))
+    toast.success(`Usuario ${correoAEliminar} eliminado`)
+    setModalVisible(false)
+    setCorreoAEliminar(null)
   }
 
   return (
@@ -29,7 +79,7 @@ export default function Usuarios() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="space-y-6"
+      className="space-y-6 relative"
     >
       <h1 className="text-4xl font-bold text-brandPrimary">Gestión de Usuarios</h1>
 
@@ -46,36 +96,122 @@ export default function Usuarios() {
             onClick={agregarVendedor}
             className="bg-pastelBlue px-4 py-2 rounded hover:bg-pastelMint transition font-semibold"
           >
-            Agregar
+            Agregar vendedor 
           </button>
         </div>
-
         {error && <p className="text-red-500 text-sm">{error}</p>}
 
         <table className="w-full mt-4 text-sm bg-white rounded-xl overflow-hidden shadow">
           <thead className="bg-pastelLavender text-left text-gray-700">
             <tr>
-              <th className="px-4 py-2">Correo del vendedor</th>
-              <th className="px-4 py-2 text-right">Acción</th>
+              <th className="px-4 py-2">Correo</th>
+              <th className="px-4 py-2">Estado</th>
+              <th className="px-4 py-2 text-right">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {vendedores.map((v, i) => (
-              <tr key={i} className="border-t hover:bg-pastelCream">
-                <td className="px-4 py-2">{v}</td>
-                <td className="px-4 py-2 text-right">
-                  <button
-                    onClick={() => eliminarVendedor(v)}
-                    className="text-red-500 hover:text-red-700"
+            {vendedores.map((v, index) => (
+              <tr key={index} className="border-t hover:bg-pastelCream">
+                <td className="px-4 py-2">
+                  {v.editando ? (
+                    <input
+                      type="email"
+                      defaultValue={v.correo}
+                      className="border rounded px-2 py-1 w-full"
+                      onBlur={(e) => guardarEdicion(index, e.target.value)}
+                      autoFocus
+                    />
+                  ) : (
+                    v.correo
+                  )}
+                </td>
+                <td className="px-4 py-2">
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                      v.estado === 'activo'
+                        ? 'bg-green-200 text-green-800'
+                        : 'bg-red-200 text-red-800'
+                    }`}
                   >
-                    Eliminar
-                  </button>
+                    {v.estado}
+                  </span>
+                </td>
+                <td className="px-4 py-2 text-right space-x-2">
+                  {!v.editando ? (
+                    <>
+                      <button
+                        onClick={() => iniciarEdicion(index)}
+                        className="text-blue-500 hover:text-blue-700"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => toggleEstado(index)}
+                        className="text-yellow-500 hover:text-yellow-700"
+                      >
+                        {v.estado === 'activo' ? 'Bloquear' : 'Desbloquear'}
+                      </button>
+                      <button
+                        onClick={() => confirmarEliminacion(v.correo)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        Eliminar
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => cancelarEdicion(index)}
+                      className="text-gray-500 hover:text-gray-800"
+                    >
+                      Cancelar
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* Modal de confirmación */}
+      <AnimatePresence>
+        {modalVisible && (
+          <motion.div
+            className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full space-y-4"
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -20, opacity: 0 }}
+            >
+              <h2 className="text-lg font-bold text-gray-800">¿Eliminar usuario?</h2>
+              <p className="text-sm text-gray-600">
+                ¿Estás seguro de eliminar <strong>{correoAEliminar}</strong>? Esta acción no se puede deshacer.
+              </p>
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  onClick={() => setModalVisible(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={eliminarVendedor}
+                  className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                >
+                  Eliminar
+                </button>
+                
+                
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }
