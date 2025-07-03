@@ -1,73 +1,73 @@
 import { useState } from 'react'
-import { FaPlus, FaTrash, FaEdit } from 'react-icons/fa'
+import { FaPlus, FaTrash } from 'react-icons/fa'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-toastify'
 import { useDatos } from '../../context/DataSimuladaContext'
 
-export default function Pedidos() {
-  const { pedidos, agregarPedido, eliminarPedido, editarPedido } = useDatos()
+export default function Ventas() {
+  const { ventas, agregarVenta, eliminarVenta } = useDatos()
 
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [busqueda, setBusqueda] = useState('')
-  const [filtro, setFiltro] = useState('Todos')
-  const [pedidoEditandoEstado, setPedidoEditandoEstado] = useState(null)
-  const [pedidoEliminando, setPedidoEliminando] = useState(null)
+  const [filtro, setFiltro] = useState('Todas')
+  const [ventaAEliminar, setVentaAEliminar] = useState(null)
 
-  const [nuevoPedido, setNuevoPedido] = useState({
+  const [nuevaVenta, setNuevaVenta] = useState({
     cliente: '',
-    fecha: '',
-    estado: 'Pendiente'
+    producto: '',
+    total: '',
+    estado: 'Completada',
   })
 
-  const filtrados = pedidos.filter((pedido) => {
+  const filtradas = ventas.filter((venta) => {
     const coincideBusqueda =
-      pedido.cliente.toLowerCase().includes(busqueda.toLowerCase()) ||
-      pedido.codigo.toLowerCase().includes(busqueda.toLowerCase())
-    const coincideEstado = filtro === 'Todos' || pedido.estado === filtro
+      venta.cliente.toLowerCase().includes(busqueda.toLowerCase()) ||
+      venta.producto.toLowerCase().includes(busqueda.toLowerCase())
+
+    const coincideEstado = filtro === 'Todas' || venta.estado === filtro
+
     return coincideBusqueda && coincideEstado
   })
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setNuevoPedido({ ...nuevoPedido, [name]: value })
+    setNuevaVenta({ ...nuevaVenta, [name]: value })
   }
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    agregarPedido(nuevoPedido)
-    setNuevoPedido({ cliente: '', fecha: '', estado: 'Pendiente' })
+    agregarVenta(nuevaVenta)
+    toast.success('Venta registrada correctamente')
+    setNuevaVenta({
+      cliente: '',
+      producto: '',
+      total: '',
+      estado: 'Completada',
+    })
     setMostrarFormulario(false)
-    toast.success('Pedido registrado correctamente')
-  }
-
-  const handleActualizarEstado = () => {
-    editarPedido(pedidoEditandoEstado)
-    toast.success('Estado actualizado correctamente')
-    setPedidoEditandoEstado(null)
   }
 
   return (
     <motion.div
-      className="p-4 space-y-6"
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
+      className="space-y-6"
     >
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-        <h1 className="text-4xl font-bold text-[#567ace]">Gestión de Pedidos</h1>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <h1 className="text-4xl font-bold text-brandPrimary">Ventas</h1>
         <button
-          className="bg-[#ff8fa3] hover:bg-[#ffb5a7] text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow transition"
           onClick={() => setMostrarFormulario(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-pastelLavender text-gray-800 rounded-lg shadow hover:bg-pastelBlue transition"
         >
-          <FaPlus />
-          Nuevo Pedido
+          <FaPlus /> Registrar Venta
         </button>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
         <input
           type="text"
-          placeholder="Buscar por cliente o código"
+          placeholder="Buscar por cliente o producto"
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
           className="w-full sm:w-1/2 p-2 border rounded-lg shadow"
@@ -77,74 +77,119 @@ export default function Pedidos() {
           onChange={(e) => setFiltro(e.target.value)}
           className="w-full sm:w-1/4 p-2 border rounded-lg shadow"
         >
-          <option value="Todos">Todos</option>
+          <option value="Todas">Todas</option>
+          <option value="Completada">Completada</option>
           <option value="Pendiente">Pendiente</option>
-          <option value="En proceso">En proceso</option>
-          <option value="Entregado">Entregado</option>
-          <option value="Cancelado">Cancelado</option>
+          <option value="Cancelada">Cancelada</option>
         </select>
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
-  {filtrados.map((pedido) => (
-    <div
-      key={pedido.id}
-      className="bg-white text-[#2f2f3f] p-4 rounded-xl shadow-lg flex flex-col justify-between"
-    >
-      <div className="mb-3 space-y-1">
-        <h2 className="text-lg font-semibold">{pedido.cliente}</h2>
-        <p className="text-sm opacity-90">Código: {pedido.codigo}</p>
-        <p className="text-sm opacity-90">Fecha: {pedido.fecha}</p>
-        <p className={`text-sm font-bold mt-2 px-3 py-1 inline-block rounded-full ${
-          pedido.estado === 'Pendiente' ? 'bg-yellow-300 text-yellow-800' :
-          pedido.estado === 'En proceso' ? 'bg-blue-300 text-blue-800' :
-          pedido.estado === 'Entregado' ? 'bg-green-300 text-green-800' :
-          'bg-red-300 text-red-800'
-        }`}>
-          {pedido.estado}
-        </p>
+      {/* GALERÍA DE VENTAS */}
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {filtradas.map((venta, i) => (
+          <div
+            key={i}
+            className="bg-white rounded-xl shadow p-4 hover:shadow-lg transition border-l-4 border-pastelLavender flex flex-col justify-between"
+          >
+            <div className="space-y-1 text-sm">
+              <p><span className="font-semibold">Cliente:</span> {venta.cliente}</p>
+              <p><span className="font-semibold">Producto:</span> {venta.producto}</p>
+              <p><span className="font-semibold">Total:</span> S/ {venta.total}</p>
+              <p><span className="font-semibold">Fecha:</span> {venta.fecha}</p>
+              <p>
+                <span className="font-semibold">Estado:</span>{' '}
+                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                  venta.estado === 'Completada'
+                    ? 'bg-green-100 text-green-700'
+                    : venta.estado === 'Pendiente'
+                    ? 'bg-yellow-100 text-yellow-700'
+                    : 'bg-red-100 text-red-700'
+                }`}>
+                  {venta.estado}
+                </span>
+              </p>
+            </div>
+            <div className="mt-3 flex justify-end">
+              <button
+                onClick={() => setVentaAEliminar(venta)}
+                className="text-red-500 hover:text-red-700"
+                title="Eliminar venta"
+              >
+                <FaTrash />
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
-      <div className="flex justify-end gap-3 mt-3">
-        <button
-          className="text-blue-600 hover:text-blue-800"
-          onClick={() => setPedidoEditandoEstado(pedido)}
-        >
-          <FaEdit />
-        </button>
-        <button
-          className="text-red-600 hover:text-red-800"
-          onClick={() => setPedidoEliminando(pedido)}
-        >
-          <FaTrash />
-        </button>
-      </div>
-    </div>
-  ))}
-</div>
 
-
-      {/* MODALES (Formulario, Editar Estado, Eliminar) */}
+      {/* MODAL DE REGISTRAR VENTA */}
       <AnimatePresence>
         {mostrarFormulario && (
-          <motion.div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-            <motion.div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md"
+          <motion.div
+            className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md"
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
             >
-              <h2 className="text-2xl font-bold mb-4 text-[#567ace]">Registrar Pedido</h2>
+              <h2 className="text-2xl font-bold mb-4 text-brandPrimary">Registrar Venta</h2>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <input type="text" name="cliente" value={nuevoPedido.cliente} onChange={handleChange} placeholder="Nombre del cliente" className="w-full p-2 border rounded" required />
-                <input type="date" name="fecha" value={nuevoPedido.fecha} onChange={handleChange} className="w-full p-2 border rounded" required />
-                <select name="estado" value={nuevoPedido.estado} onChange={handleChange} className="w-full p-2 border rounded">
+                <input
+                  type="text"
+                  name="cliente"
+                  value={nuevaVenta.cliente}
+                  onChange={handleChange}
+                  placeholder="Nombre del cliente"
+                  className="w-full p-2 border rounded"
+                  required
+                />
+                <input
+                  type="text"
+                  name="producto"
+                  value={nuevaVenta.producto}
+                  onChange={handleChange}
+                  placeholder="Producto vendido"
+                  className="w-full p-2 border rounded"
+                  required
+                />
+                <input
+                  type="number"
+                  name="total"
+                  value={nuevaVenta.total}
+                  onChange={handleChange}
+                  placeholder="Total de la venta"
+                  className="w-full p-2 border rounded"
+                  required
+                />
+                <select
+                  name="estado"
+                  value={nuevaVenta.estado}
+                  onChange={handleChange}
+                  className="w-full p-2 border rounded"
+                >
+                  <option value="Completada">Completada</option>
                   <option value="Pendiente">Pendiente</option>
-                  <option value="En proceso">En proceso</option>
-                  <option value="Entregado">Entregado</option>
-                  <option value="Cancelado">Cancelado</option>
+                  <option value="Cancelada">Cancelada</option>
                 </select>
-                <div className="flex justify-end gap-2">
-                  <button type="button" onClick={() => setMostrarFormulario(false)} className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancelar</button>
-                  <button type="submit" className="bg-[#567ace] text-white px-4 py-2 rounded hover:bg-blue-700">Guardar</button>
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setMostrarFormulario(false)}
+                    className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-pastelLavender rounded hover:bg-pastelBlue"
+                  >
+                    Guardar
+                  </button>
                 </div>
               </form>
             </motion.div>
@@ -152,45 +197,44 @@ export default function Pedidos() {
         )}
       </AnimatePresence>
 
+      {/* MODAL DE CONFIRMACIÓN DE ELIMINACIÓN */}
       <AnimatePresence>
-        {pedidoEditandoEstado && (
-          <motion.div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-            <motion.div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md"
+        {ventaAEliminar && (
+          <motion.div
+            className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full space-y-4"
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
             >
-              <h2 className="text-2xl font-bold mb-4 text-[#567ace]">Editar Estado</h2>
-              <form onSubmit={(e) => { e.preventDefault(); handleActualizarEstado() }} className="space-y-4">
-                <select value={pedidoEditandoEstado.estado} onChange={(e) => setPedidoEditandoEstado({ ...pedidoEditandoEstado, estado: e.target.value })} className="w-full p-2 border rounded">
-                  <option value="Pendiente">Pendiente</option>
-                  <option value="En proceso">En proceso</option>
-                  <option value="Entregado">Entregado</option>
-                  <option value="Cancelado">Cancelado</option>
-                </select>
-                <div className="flex justify-end gap-2">
-                  <button type="button" onClick={() => setPedidoEditandoEstado(null)} className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancelar</button>
-                  <button type="submit" className="bg-[#567ace] text-white px-4 py-2 rounded hover:bg-blue-700">Guardar cambios</button>
-                </div>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {pedidoEliminando && (
-          <motion.div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-            <motion.div className="bg-white p-6 rounded-xl shadow-xl text-center w-full max-w-sm"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-            >
-              <h3 className="text-xl font-semibold mb-2 text-red-600">¿Eliminar pedido?</h3>
-              <p className="mb-4">Estás a punto de eliminar el pedido de <strong>{pedidoEliminando.cliente}</strong>.</p>
-              <div className="flex justify-center gap-4">
-                <button onClick={() => setPedidoEliminando(null)} className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancelar</button>
-                <button onClick={() => { eliminarPedido(pedidoEliminando.id); setPedidoEliminando(null); toast.success('Pedido eliminado correctamente') }} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Eliminar</button>
+              <h2 className="text-xl font-bold text-red-600">¿Eliminar venta?</h2>
+              <p className="text-sm text-gray-700">
+                ¿Estás seguro de eliminar la venta de{' '}
+                <strong>{ventaAEliminar.producto}</strong> para{' '}
+                <strong>{ventaAEliminar.cliente}</strong>? Esta acción no se puede deshacer.
+              </p>
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  onClick={() => setVentaAEliminar(null)}
+                  className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    eliminarVenta(ventaAEliminar.id)
+                    toast.success('Venta eliminada correctamente')
+                    setVentaAEliminar(null)
+                  }}
+                  className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                >
+                  Eliminar
+                </button>
               </div>
             </motion.div>
           </motion.div>
