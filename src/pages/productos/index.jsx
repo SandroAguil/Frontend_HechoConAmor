@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom'
 
 import ModalConfirmacion from './ModalConfirmacion'
 import FormularioProducto from './FormularioProducto' // Asegúrate de que este nombre coincida con tu archivo
+import { useDatos } from '../../context/DataSimuladaContext'
 
 export default function Productos() {
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
@@ -15,27 +16,9 @@ export default function Productos() {
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false)
   const [cargando, setCargando] = useState(false)
 
-  const [productos, setProductos] = useState(() => {
-    const almacenados = localStorage.getItem('productos')
-    return almacenados
-      ? JSON.parse(almacenados)
-      : [
-          {
-            id: 1,
-            codigo: 'PROD001',
-            nombre: 'Ramo flores amarillas',
-            precio: '45.00',
-            stock: '10',
-            categoria: 'Decoración',
-            estado: 'Disponible',
-            imagen: 'https://i.imgur.com/kPIqtFP.jpeg',
-          },
-        ]
-  })
+const { productos, agregarProducto, eliminarProducto } = useDatos()
 
-  useEffect(() => {
-    localStorage.setItem('productos', JSON.stringify(productos))
-  }, [productos])
+
 
   const [nuevoProducto, setNuevoProducto] = useState({
     nombre: '',
@@ -122,9 +105,8 @@ export default function Productos() {
       imagen: imagenTrim,
     }
 
-    const actualizados = [...productos, nuevo]
-    setProductos(actualizados)
-    localStorage.setItem('productos', JSON.stringify(actualizados))
+agregarProducto(nuevo)
+
 
     setTimeout(() => {
       setNuevoProducto({
@@ -143,9 +125,8 @@ export default function Productos() {
 
   const handleEliminar = () => {
     setCargando(true)
-    const actualizados = productos.filter((p) => p.id !== idAEliminar)
-    setProductos(actualizados)
-    localStorage.setItem('productos', JSON.stringify(actualizados))
+eliminarProducto(idAEliminar)
+
     setTimeout(() => {
       toast.success('Producto eliminado correctamente')
       setMostrarConfirmacion(false)

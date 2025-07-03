@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { FaPlus, FaCheck, FaTrash, FaEdit } from 'react-icons/fa'
+import { useState, useContext } from 'react'
+import { FaPlus, FaTrash, FaEdit } from 'react-icons/fa'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-toastify'
+import { DataSimuladaContext } from "../../context/DataSimuladaContext";
 
 
 export default function Produccion() {
@@ -10,43 +11,23 @@ export default function Produccion() {
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false)
   const [modoEdicion, setModoEdicion] = useState(false)
   const [ordenEditando, setOrdenEditando] = useState(null)
-
-const iniciarEdicion = (codigo) => {
-  const orden = ordenes.find((o) => o.codigo === codigo)
-  if (orden) {
-    setNuevaOrden({
-      producto: orden.producto,
-      fecha: orden.fecha,
-      cantidad: orden.cantidad,
-      estado: orden.estado
-    })
-    setInsumosUsados(orden.insumos || [])
-    setOrdenEditando(codigo)
-    setModoEdicion(true)
-    setMostrarFormulario(true)
-  }
-}
-
-  
-  const [ordenes, setOrdenes] = useState([
-    {
-      codigo: 'PRD001',
-      producto: 'Ramo flores amarillas',
-      fecha: '2025-06-25',
-      cantidad: 10,
-      estado: 'En curso'
-    }
-  ])
-
+  const [busqueda, setBusqueda] = useState('')
+  const [filtro, setFiltro] = useState('Todos')
   const [insumosUsados, setInsumosUsados] = useState([])
-const insumosDisponibles = [
-  { id: 1, nombre: 'Cartulina' },
-  { id: 2, nombre: 'Flores' },
-  { id: 3, nombre: 'Lazo' },
-  { id: 4, nombre: 'Caja decorativa' }
-]
 
+  const insumosDisponibles = [
+    { id: 1, nombre: 'Cartulina' },
+    { id: 2, nombre: 'Flores' },
+    { id: 3, nombre: 'Lazo' },
+    { id: 4, nombre: 'Caja decorativa' }
+  ]
 
+  const {
+    ordenesProduccion,
+    agregarOrdenProduccion,
+    editarOrdenProduccion,
+    eliminarOrdenProduccion
+  } = useContext(DataSimuladaContext)
 
   const [nuevaOrden, setNuevaOrden] = useState({
     producto: '',
@@ -55,64 +36,59 @@ const insumosDisponibles = [
     estado: 'En curso'
   })
 
-  const [busqueda, setBusqueda] = useState('')
-  const [filtro, setFiltro] = useState('Todos')
-
-  const filtradas = ordenes.filter((o) => {
-    const coincideBusqueda =
-      o.producto.toLowerCase().includes(busqueda.toLowerCase()) ||
-      o.codigo.toLowerCase().includes(busqueda.toLowerCase())
-
-    const coincideEstado =
-      filtro === 'Todos' || o.estado === filtro
-
-    return coincideBusqueda && coincideEstado
-  })
+  const iniciarEdicion = (codigo) => {
+    const orden = ordenesProduccion.find((o) => o.codigo === codigo)
+    if (orden) {
+      setNuevaOrden({
+        producto: orden.producto,
+        fecha: orden.fecha,
+        cantidad: orden.cantidad,
+        estado: orden.estado
+      })
+      setInsumosUsados(orden.insumos || [])
+      setOrdenEditando(codigo)
+      setModoEdicion(true)
+      setMostrarFormulario(true)
+    }
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target
     setNuevaOrden({ ...nuevaOrden, [name]: value })
   }
 
-const handleSubmit = (e) => {
-  e.preventDefault()
+  const handleSubmit = (e) => {
+    e.preventDefault()
 
-  if (modoEdicion && ordenEditando) {
-    // Editar orden existente
-    const nuevasOrdenes = ordenes.map((orden) =>
-      orden.codigo === ordenEditando
-        ? { ...orden, ...nuevaOrden, insumos: insumosUsados }
-        : orden
-    )
-    setOrdenes(nuevasOrdenes)
-    toast.success("Orden actualizada correctamente")
-  } else {
-    // Nueva orden
-    const codigo = `PRD${(ordenes.length + 1).toString().padStart(3, '0')}`
-    setOrdenes([
-      ...ordenes,
-      {
+    if (modoEdicion && ordenEditando) {
+      editarOrdenProduccion(ordenEditando, {
         ...nuevaOrden,
-        codigo,
         insumos: insumosUsados
-      }
-    ])
-    toast.success('Orden de producción registrada')
+      })
+      toast.success("Orden actualizada correctamente")
+    } else {
+      agregarOrdenProduccion({
+        ...nuevaOrden,
+        insumos: insumosUsados
+      })
+      toast.success("Orden de producción registrada")
+    }
+
+    setNuevaOrden({ producto: '', fecha: '', cantidad: '', estado: 'En curso' })
+    setMostrarFormulario(false)
+    setInsumosUsados([])
+    setModoEdicion(false)
+    setOrdenEditando(null)
   }
 
-  setNuevaOrden({ producto: '', fecha: '', cantidad: '', estado: 'En curso' })
-  setMostrarFormulario(false)
-  setInsumosUsados([])
-  setModoEdicion(false)
-  setOrdenEditando(null)
-}
-
-
-
-const eliminarOrden = (codigo) => {
-  setOrdenes(ordenes.filter((orden) => orden.codigo !== codigo));
-  toast.success("Orden eliminada correctamente");
-};
+  const filtradas = ordenesProduccion.filter((o) => {
+    const coincideBusqueda =
+      o.producto.toLowerCase().includes(busqueda.toLowerCase()) ||
+      o.codigo.toLowerCase().includes(busqueda.toLowerCase())
+    const coincideEstado =
+      filtro === 'Todos' || o.estado === filtro
+    return coincideBusqueda && coincideEstado
+  })
 
   return (
     <motion.div
@@ -132,7 +108,6 @@ const eliminarOrden = (codigo) => {
         </button>
       </div>
 
-      {/* Filtro y búsqueda */}
       <div className="flex flex-col sm:flex-row gap-4">
         <input
           type="text"
@@ -153,7 +128,6 @@ const eliminarOrden = (codigo) => {
         </select>
       </div>
 
-      {/* Tabla */}
       <div className="overflow-x-auto shadow rounded-xl">
         <table className="min-w-full bg-white text-sm rounded-xl">
           <thead className="bg-pastelMint text-gray-700">
@@ -174,40 +148,39 @@ const eliminarOrden = (codigo) => {
                 <td className="px-4 py-3">{orden.fecha}</td>
                 <td className="px-4 py-3">{orden.cantidad}</td>
                 <td className="px-4 py-3">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      orden.estado === 'Finalizado'
-                        ? 'bg-green-100 text-green-700'
-                        : orden.estado === 'Cancelado'
-                        ? 'bg-red-100 text-red-700'
-                        : 'bg-yellow-100 text-yellow-700'
-                    }`}
-                  >
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    orden.estado === 'Finalizado'
+                      ? 'bg-green-100 text-green-700'
+                      : orden.estado === 'Cancelado'
+                      ? 'bg-red-100 text-red-700'
+                      : 'bg-yellow-100 text-yellow-700'
+                  }`}>
                     {orden.estado}
                   </span>
                 </td>
-<td className="px-4 py-3 text-center flex justify-center gap-3">
-<button
-  className="text-blue-600 hover:text-blue-800"
-  onClick={() => iniciarEdicion(orden.codigo)}
->
-  <FaEdit />
-</button>
-  <button
-    className="text-red-500 hover:text-red-700"
-    onClick={() => eliminarOrden(orden.codigo)}
-  >
-    <FaTrash />
-  </button>
-</td>
-
+                <td className="px-4 py-3 text-center flex justify-center gap-3">
+                  <button
+                    className="text-blue-600 hover:text-blue-800"
+                    onClick={() => iniciarEdicion(orden.codigo)}
+                  >
+                    <FaEdit />
+                  </button>
+                  <button
+                    className="text-red-500 hover:text-red-700"
+                    onClick={() => {
+                      eliminarOrdenProduccion(orden.codigo)
+                      toast.success("Orden eliminada correctamente")
+                    }}
+                  >
+                    <FaTrash />
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {/* Modal */}
       <AnimatePresence>
         {mostrarFormulario && (
           <motion.div
@@ -222,7 +195,9 @@ const eliminarOrden = (codigo) => {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
             >
-              <h2 className="text-2xl font-bold mb-4 text-brandPrimary">Nueva Orden</h2>
+              <h2 className="text-2xl font-bold mb-4 text-brandPrimary">
+                {modoEdicion ? "Editar Orden" : "Nueva Orden"}
+              </h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <input
                   type="text"
@@ -260,6 +235,54 @@ const eliminarOrden = (codigo) => {
                   <option value="Finalizado">Finalizado</option>
                   <option value="Cancelado">Cancelado</option>
                 </select>
+
+                <div className="space-y-2">
+                  <h3 className="font-semibold">Insumos utilizados</h3>
+                  {insumosUsados.map((item, i) => (
+                    <div key={i} className="flex gap-2">
+                      <select
+                        value={item.id}
+                        onChange={(e) => {
+                          const nuevos = [...insumosUsados]
+                          nuevos[i].id = parseInt(e.target.value)
+                          setInsumosUsados(nuevos)
+                        }}
+                        className="w-1/2 border p-2 rounded"
+                        required
+                      >
+                        <option value="">Seleccionar insumo</option>
+                        {insumosDisponibles.map((insumo) => (
+                          <option key={insumo.id} value={insumo.id}>
+                            {insumo.nombre}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        placeholder="Cantidad"
+                        value={item.cantidad}
+                        onChange={(e) => {
+                          const nuevos = [...insumosUsados]
+                          nuevos[i].cantidad = parseInt(e.target.value)
+                          setInsumosUsados(nuevos)
+                        }}
+                        className="w-1/2 border p-2 rounded"
+                        required
+                        min="1"
+                      />
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setInsumosUsados([...insumosUsados, { id: '', cantidad: '' }])
+                    }
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    + Añadir insumo
+                  </button>
+                </div>
+
                 <div className="flex justify-end gap-3">
                   <button
                     type="button"
@@ -276,107 +299,10 @@ const eliminarOrden = (codigo) => {
                   </button>
                 </div>
               </form>
-              <div className="space-y-2">
-  <h3 className="font-semibold">Insumos utilizados</h3>
-  {insumosUsados.map((item, i) => (
-    <div key={i} className="flex gap-2">
-      <select
-        value={item.id}
-        onChange={(e) => {
-          const nuevos = [...insumosUsados]
-          nuevos[i].id = parseInt(e.target.value)
-          setInsumosUsados(nuevos)
-        }}
-        className="w-1/2 border p-2 rounded"
-        required
-      >
-        <option value="">Seleccionar insumo</option>
-        {insumosDisponibles.map((insumo) => (
-          <option key={insumo.id} value={insumo.id}>
-            {insumo.nombre}
-          </option>
-        ))}
-      </select>
-      <input
-        type="number"
-        placeholder="Cantidad"
-        value={item.cantidad}
-        onChange={(e) => {
-          const nuevos = [...insumosUsados]
-          nuevos[i].cantidad = parseInt(e.target.value)
-          setInsumosUsados(nuevos)
-        }}
-        className="w-1/2 border p-2 rounded"
-        required
-        min="1"
-      />
-    </div>
-  ))}
-
-  <button
-    type="button"
-    onClick={() =>
-      setInsumosUsados([...insumosUsados, { id: '', cantidad: '' }])
-    }
-    className="text-sm text-blue-600 hover:underline"
-  >
-    + Añadir insumo
-  </button>
-</div>
-
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-      <AnimatePresence>
-  {mostrarConfirmacion && ordenEliminando && (
-    <motion.div
-      className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
-      <motion.div
-        className="bg-white p-6 rounded-xl shadow-lg w-full max-w-sm text-center"
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.8, opacity: 0 }}
-      >
-        <h2 className="text-xl font-bold text-red-600 mb-2">
-          ¿Eliminar orden?
-        </h2>
-        <p className="mb-4">
-          Estás a punto de eliminar la orden de{" "}
-          <span className="font-semibold">
-            {ordenEliminando.producto}
-          </span>
-          .
-        </p>
-        <div className="flex justify-center gap-4">
-          <button
-            onClick={() => setMostrarConfirmacion(false)}
-            className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={() => {
-              setOrdenes((prev) =>
-                prev.filter((o) => o.codigo !== ordenEliminando.codigo)
-              )
-              toast.success("Orden eliminada correctamente")
-              setMostrarConfirmacion(false)
-              setOrdenEliminando(null)
-            }}
-            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-          >
-            Eliminar
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
-  )}
-</AnimatePresence>
     </motion.div>
   )
 }
