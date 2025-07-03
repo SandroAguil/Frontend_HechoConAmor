@@ -1,73 +1,120 @@
-import { useParams, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { useDatos } from '../../context/DataSimuladaContext'
-
+import {
+  obtenerProductoPorId,
+  actualizarProducto
+} from '../../services/productosService'
 
 export default function EditarProducto() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { productos, editarProducto } = useDatos()
-  const [producto, setProducto] = useState(null)
+
+  const [producto, setProducto] = useState({
+    nombre: '',
+    precio: '',
+    stock: '',
+    categoria: '',
+    estado: 'Disponible',
+    imagen: ''
+  })
+
   const [cargando, setCargando] = useState(false)
 
   useEffect(() => {
-    const productoEncontrado = productos.find(p => p.id === Number(id))
-    if (!productoEncontrado) {
-      toast.error('Producto no encontrado.')
-      navigate('/productos')
-    } else {
-      setProducto(productoEncontrado)
+    const cargarProducto = async () => {
+      try {
+        const data = await obtenerProductoPorId(id)
+        setProducto(data)
+      } catch (error) {
+        toast.error('Error al cargar producto')
+      }
     }
-  }, [id, productos, navigate])
+    cargarProducto()
+  }, [id])
 
   const handleChange = (e) => {
     const { name, value } = e.target
     setProducto({ ...producto, [name]: value })
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setCargando(true)
 
-    editarProducto(producto)
-
-    setTimeout(() => {
-      toast.success('Producto actualizado correctamente.')
+    try {
+      await actualizarProducto(id, producto)
+      toast.success('Producto actualizado correctamente')
       navigate('/productos')
-    }, 1000)
+    } catch (error) {
+      toast.error('Error al actualizar producto')
+    } finally {
+      setCargando(false)
+    }
   }
 
-  if (!producto) return null
-
   return (
-    <div className="max-w-xl mx-auto p-4 bg-white shadow rounded-xl mt-10">
-      <h1 className="text-3xl font-bold text-brandPrimary mb-6">Editar Producto</h1>
+    <div className="max-w-xl mx-auto mt-10 bg-white p-6 rounded-xl shadow-xl">
+      <h2 className="text-2xl font-bold text-center mb-6 text-brandPrimary">Editar Producto</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <input type="text" name="nombre" value={producto.nombre} onChange={handleChange} placeholder="Nombre" className="w-full p-2 border rounded" required />
-        <input type="number" name="precio" value={producto.precio} onChange={handleChange} placeholder="Precio" className="w-full p-2 border rounded" required />
-        <input type="number" name="stock" value={producto.stock} onChange={handleChange} placeholder="Stock" className="w-full p-2 border rounded" required />
-        <input type="text" name="categoria" value={producto.categoria} onChange={handleChange} placeholder="Categoría" className="w-full p-2 border rounded" required />
-        <input type="text" name="imagen" value={producto.imagen} onChange={handleChange} placeholder="URL de la imagen" className="w-full p-2 border rounded" required />
-        <select name="estado" value={producto.estado} onChange={handleChange} className="w-full p-2 border rounded">
+        <input
+          type="text"
+          name="nombre"
+          placeholder="Nombre"
+          value={producto.nombre}
+          onChange={handleChange}
+          className="w-full p-2 border border-gray-300 rounded-lg"
+          required
+        />
+        <input
+          type="text"
+          name="precio"
+          placeholder="Precio"
+          value={producto.precio}
+          onChange={handleChange}
+          className="w-full p-2 border border-gray-300 rounded-lg"
+          required
+        />
+        <input
+          type="text"
+          name="stock"
+          placeholder="Stock"
+          value={producto.stock}
+          onChange={handleChange}
+          className="w-full p-2 border border-gray-300 rounded-lg"
+        />
+        <input
+          type="text"
+          name="categoria"
+          placeholder="Categoría"
+          value={producto.categoria}
+          onChange={handleChange}
+          className="w-full p-2 border border-gray-300 rounded-lg"
+        />
+        <input
+          type="text"
+          name="imagen"
+          placeholder="URL de imagen"
+          value={producto.imagen}
+          onChange={handleChange}
+          className="w-full p-2 border border-gray-300 rounded-lg"
+        />
+        <select
+          name="estado"
+          value={producto.estado}
+          onChange={handleChange}
+          className="w-full p-2 border border-gray-300 rounded-lg"
+        >
           <option value="Disponible">Disponible</option>
           <option value="Agotado">Agotado</option>
         </select>
-        <div className="flex justify-end gap-3">
-          <button type="button" onClick={() => navigate('/productos')} className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-2 justify-center"
-            disabled={cargando}
-          >
-            {cargando && (
-              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            )}
-            {cargando ? 'Guardando...' : 'Guardar Cambios'}
-          </button>
-        </div>
+        <button
+          type="submit"
+          disabled={cargando}
+          className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+        >
+          {cargando ? 'Guardando...' : 'Guardar Cambios'}
+        </button>
       </form>
     </div>
   )

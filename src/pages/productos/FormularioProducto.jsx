@@ -1,6 +1,61 @@
 import { motion } from 'framer-motion'
+import { toast } from 'react-toastify'
+import { crearProducto } from '../../services/productosService'
 
-export default function FormularioProducto({ nuevoProducto, handleChange, handleSubmit, cargando, cerrar }) {
+export default function FormularioProducto({
+  nuevoProducto,
+  setNuevoProducto,
+  onProductoCreado,
+  cargando,
+  setCargando,
+  cerrar,
+}) {
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setNuevoProducto((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    if (
+      !nuevoProducto.nombre ||
+      !nuevoProducto.precio ||
+      !nuevoProducto.stock ||
+      !nuevoProducto.categoria ||
+      !nuevoProducto.imagen
+    ) {
+      toast.error('Completa todos los campos')
+      return
+    }
+
+    try {
+      setCargando(true)
+      const productoConCodigo = {
+  ...nuevoProducto,
+  codigo: `PROD${Date.now()}` // o alguna lógica que tú quieras
+}
+await crearProducto(productoConCodigo)
+
+      await crearProducto(nuevoProducto)
+      toast.success('Producto creado exitosamente')
+      onProductoCreado()
+      cerrar()
+      setNuevoProducto({
+        nombre: '',
+        precio: '',
+        stock: '',
+        categoria: '',
+        estado: 'Disponible',
+        imagen: '',
+      })
+    } catch (error) {
+      toast.error(error.message || 'Error al crear producto')
+    } finally {
+      setCargando(false)
+    }
+  }
+
   return (
     <motion.div
       className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"

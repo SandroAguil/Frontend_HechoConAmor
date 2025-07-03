@@ -1,11 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { FaEdit, FaTrash, FaTh, FaList, FaPlus } from 'react-icons/fa'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-toastify'
 import { Link } from 'react-router-dom'
-import { useDatos } from '../../context/DataSimuladaContext'
 import ModalConfirmacion from './ModalConfirmacion'
 import FormularioProducto from './FormularioProducto'
+import TablaProductos from './TablaProductos'
+import {
+  obtenerProductos,
+  crearProducto,
+  eliminarProductoPorId
+} from '../../services/productosService'
+
 
 export default function Productos() {
   const [vista, setVista] = useState('galeria')
@@ -15,8 +21,7 @@ export default function Productos() {
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false)
   const [idAEliminar, setIdAEliminar] = useState(null)
   const [cargando, setCargando] = useState(false)
-
-  const { productos, agregarProducto, eliminarProducto } = useDatos()
+  const [productos, setProductos] = useState([])
 
   const [nuevoProducto, setNuevoProducto] = useState({
     nombre: '',
@@ -27,6 +32,69 @@ export default function Productos() {
     imagen: '',
   })
 
+  const cargarProductos = async () => {
+    try {
+      const data = await obtenerProductos()
+      setProductos(data)
+    } catch (error) {
+      toast.error('Error al cargar productos')
+      console.error(error)
+    }
+  }
+
+  useEffect(() => {
+    cargarProductos()
+  }, [])
+
+  const handleCrearProducto = async (e) => {
+    e.preventDefault()
+    if (!nuevoProducto.nombre || !nuevoProducto.precio) {
+      toast.error('Completa todos los campos')
+      return
+    }
+
+    setCargando(true)
+    try {
+      const nuevo = {
+        ...nuevoProducto,
+        codigo: `PROD${(productos.length + 1).toString().padStart(3, '0')}`,
+      }
+      await crearProducto(nuevo)
+      toast.success('Producto agregado correctamente')
+      setMostrarFormulario(false)
+      setNuevoProducto({
+        nombre: '',
+        precio: '',
+        stock: '',
+        categoria: '',
+        estado: 'Disponible',
+        imagen: '',
+      })
+      await cargarProductos()
+    } catch (error) {
+      toast.error('Error al agregar producto')
+      console.error(error)
+    } finally {
+      setCargando(false)
+    }
+  }
+
+  const handleEliminar = async () => {
+    setCargando(true)
+    try {
+      await eliminarProductoPorId(idAEliminar)
+      toast.success('Producto eliminado correctamente')
+      setMostrarConfirmacion(false)
+      setIdAEliminar(null)
+      await cargarProductos()
+    } catch (error) {
+      toast.error('Error al eliminar producto')
+      console.error(error)
+    } finally {
+      setCargando(false)
+    }
+  }
+
   const productosFiltrados = productos.filter((prod) => {
     const coincideBusqueda =
       prod.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -34,17 +102,6 @@ export default function Productos() {
     const coincideEstado = filtro === 'Todos' || prod.estado === filtro
     return coincideBusqueda && coincideEstado
   })
-
-  const handleEliminar = () => {
-    setCargando(true)
-    eliminarProducto(idAEliminar)
-    setTimeout(() => {
-      toast.success('Producto eliminado correctamente')
-      setMostrarConfirmacion(false)
-      setIdAEliminar(null)
-      setCargando(false)
-    }, 1200)
-  }
 
   return (
     <motion.div
@@ -101,60 +158,13 @@ export default function Productos() {
 
       {/* Vista dinámica */}
       {vista === 'lista' ? (
-        <div className="overflow-x-auto shadow rounded-xl">
-          <table className="min-w-full bg-white text-sm rounded-xl">
-            <thead className="bg-gray-100 text-gray-800 font-semibold">
-              <tr>
-                <th className="px-4 py-3 text-left">Imagen</th>
-                <th className="px-4 py-3 text-left">Código</th>
-                <th className="px-4 py-3 text-left">Nombre</th>
-                <th className="px-4 py-3 text-left">Precio</th>
-                <th className="px-4 py-3 text-left">Stock</th>
-                <th className="px-4 py-3 text-left">Categoría</th>
-                <th className="px-4 py-3 text-left">Estado</th>
-                <th className="px-4 py-3 text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              <AnimatePresence>
-                {productosFiltrados.map((prod) => (
-                  <motion.tr
-                    key={prod.id}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.2 }}
-                    className="border-b hover:bg-gray-50"
-                  >
-                    <td className="px-4 py-3">
-                      <img src={prod.imagen} alt={prod.nombre} className="w-12 h-12 object-cover rounded" />
-                    </td>
-                    <td className="px-4 py-3">{prod.codigo}</td>
-                    <td className="px-4 py-3">{prod.nombre}</td>
-                    <td className="px-4 py-3">S/ {prod.precio}</td>
-                    <td className="px-4 py-3">{prod.stock}</td>
-                    <td className="px-4 py-3">{prod.categoria}</td>
-                    <td className="px-4 py-3">{prod.estado}</td>
-                    <td className="px-4 py-3 text-center flex justify-center gap-3">
-                      <Link to={`/productos/editar/${prod.id}`} className="text-blue-600 hover:text-blue-800">
-                        <FaEdit />
-                      </Link>
-                      <button
-                        className="text-red-600 hover:text-red-800"
-                        onClick={() => {
-                          setIdAEliminar(prod.id)
-                          setMostrarConfirmacion(true)
-                        }}
-                      >
-                        <FaTrash />
-                      </button>
-                    </td>
-                  </motion.tr>
-                ))}
-              </AnimatePresence>
-            </tbody>
-          </table>
-        </div>
+        <TablaProductos
+          productos={productos}
+          busqueda={busqueda}
+          filtro={filtro}
+          setIdAEliminar={setIdAEliminar}
+          setMostrarConfirmacion={setMostrarConfirmacion}
+        />
       ) : (
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           <AnimatePresence>
@@ -199,27 +209,15 @@ export default function Productos() {
       {/* Modal agregar producto */}
       <AnimatePresence>
         {mostrarFormulario && (
-          <FormularioProducto
-            nuevoProducto={nuevoProducto}
-            handleChange={(e) => setNuevoProducto({ ...nuevoProducto, [e.target.name]: e.target.value })}
-            handleSubmit={(e) => {
-              e.preventDefault()
-              if (!nuevoProducto.nombre || !nuevoProducto.precio) {
-                toast.error('Completa todos los campos')
-                return
-              }
-              agregarProducto({
-                ...nuevoProducto,
-                id: Date.now(),
-                codigo: `PROD${(productos.length + 1).toString().padStart(3, '0')}`,
-              })
-              setMostrarFormulario(false)
-              setNuevoProducto({ nombre: '', precio: '', stock: '', categoria: '', estado: 'Disponible', imagen: '' })
-              toast.success('Producto agregado correctamente')
-            }}
-            cargando={cargando}
-            cerrar={() => setMostrarFormulario(false)}
-          />
+<FormularioProducto
+  nuevoProducto={nuevoProducto}
+  setNuevoProducto={setNuevoProducto}
+  onProductoCreado={cargarProductos}
+  cargando={cargando}
+  setCargando={setCargando}
+  cerrar={() => setMostrarFormulario(false)}
+/>
+
         )}
       </AnimatePresence>
 
