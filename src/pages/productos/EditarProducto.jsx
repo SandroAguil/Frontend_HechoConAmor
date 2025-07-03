@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
+import { useDatos } from '../../context/DataSimuladaContext'
 
 
 export default function EditarProducto() {

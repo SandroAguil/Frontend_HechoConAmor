@@ -22,80 +22,82 @@ import {
 import { motion } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
 import PageTransition from '../../components/PageTransition'
+import { useDatos } from '../../context/DataSimuladaContext'
+
 
 // 🎨 Colores para el gráfico de pastel
 const colores = ['#A0D8EF', '#FADADD', '#E6E6FA']
 
-// ✅ Datos simulados (en reemplazo de useDatos)
-const productos = [{}, {}, {}]
-const ventas = [
-  { total: 100, fecha: '2025-01-15' },
-  { total: 200, fecha: '2025-02-10' },
-  { total: 300, fecha: '2025-02-15' }
-]
-const pedidos = [
-  { estado: 'completado' },
-  { estado: 'pendiente' },
-  { estado: 'cancelado' },
-  { estado: 'completado' }
-]
-const produccion = [
-  { estado: 'en curso' },
-  { estado: 'finalizado' },
-  { estado: 'en curso' }
-]
-const insumos = [{}, {}, {}, {}]
-const reportes = [{}, {}]
-const usuarios = [{}, {}, {}, {}]
+export default function DashboardAdmin() {
+const { productos, pedidos, ventas, insumos, ordenesProduccion,usuarios,reportes } = useDatos()
 
-// 🧮 Cálculos
-const totalProductos = productos.length
-const totalPedidos = pedidos.length
-const totalVentas = ventas.reduce((acc, venta) => acc + venta.total, 0)
-const totalInsumos = insumos.length
-const produccionActiva = produccion.filter(p => p.estado === 'en curso').length
-const totalReportes = reportes.length
+  const { usuario } = useAuth()
+  
+
+  const productosFiltrados = usuario?.rol === 'administrador'
+    ? productos
+    : productos.filter((p) => p.creadoPor === usuario.id)
+
+  const totalProductos = productosFiltrados.length
+
+
+ 
+  
 const totalUsuarios = usuarios.length
 
-const productosTop = [
-  {
-    nombre: 'Ramos flores amarillas',
-    img: 'https://...jpg',
-    ventas: 120
-  },
-  {
-    nombre: 'Ramo rojo',
-    img: 'https://...jpg',
-    ventas: 110
-  },
-  {
-    nombre: 'Ramo rosado',
-    img: 'https://...jpg',
-    ventas: 105
-  },
-  {
-    nombre: 'Ramo primavera',
-    img: 'https://...jpg',
-    ventas: 100
-  }
-]
 
-const ventasMensuales = Array.from({ length: 12 }, (_, i) => {
-  const mes = new Date(0, i).toLocaleString('es-PE', { month: 'short' })
-  const total = ventas
-    .filter(v => new Date(v.fecha).getMonth() === i)
-    .reduce((acc, curr) => acc + curr.total, 0)
-  return { mes, ventas: total }
-})
 
-const estadoPedidos = [
-  { name: 'Completados', value: pedidos.filter(p => p.estado === 'completado').length },
-  { name: 'Pendientes', value: pedidos.filter(p => p.estado === 'pendiente').length },
-  { name: 'Cancelados', value: pedidos.filter(p => p.estado === 'cancelado').length }
-]
+  const totalPedidos = pedidos.length
+  const totalVentas = ventas
+  .filter((v) => v.estado === 'Completada')
+  .reduce((acc, v) => acc + parseFloat(v.total), 0)
 
-export default function DashboardAdmin() {
-  const { usuario } = useAuth()
+  const totalInsumos = insumos.length
+const produccionActiva = ordenesProduccion.filter(p => p.estado === 'En curso').length
+  const totalReportes = reportes.length
+  
+
+  const productosTop = [
+    {
+      nombre: 'Ramos flores amarillas',
+      img: 'https://scontent.flim31-1.fna.fbcdn.net/v/t39.30808-6/492660023_1259926122802458_5134095741125500154_n.jpg?_nc_cat=102&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeHfoRmfWIiev2qB4QbM6TzsDoZwFUpIHjcOhnAVSkgeNxdRg8UNVqGVuvL6glGjT3uXnbOHgY8jpH_onrIqx2Ue&_nc_ohc=TgwliWPhXxQQ7kNvwH-X2_b&_nc_oc=Adl8zmUeNp0bMe_kQy_mPmmZNzy4w9460wrrpwDiSW9qDlc15MtiKZHg0TVYx_i-a-rlPSx7BVVbAKL9IohAAW-5&_nc_zt=23&_nc_ht=scontent.flim31-1.fna&_nc_gid=lwSDfuYcguSEmEggiSTkuQ&oh=00_AfMvaF5s0s237nGwvZAm352CaVGkgwYCU9QXqN_BfA_6Sw&oe=686A5F19',
+      ventas: 120
+    },
+    {
+      nombre: 'Ramo rojo',
+      img: 'https://scontent.flim31-1.fna.fbcdn.net/v/t39.30808-6/491557397_1252442210217516_1258238891102956831_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=104&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeEYA5o2Aox93DdY9bJQ3HsFjk5P1T-IOh2OTk_VP4g6HfO9A6HbPLXiiINyXwGn8gdFgWvEJ2dIzSgVFbG5U_7C&_nc_ohc=kItrlfmux_EQ7kNvwFDvuQ6&_nc_oc=AdkV2ewvZ4TwvADsYrLMaBxqlZrCAZXozH_trkKydlmQWyFBkgm7FVLpOfekpygWa6US957z5H3uWk4hiOg-YcEr&_nc_zt=23&_nc_ht=scontent.flim31-1.fna&_nc_gid=KIgaO-OdROL7eY-ZDEwVtg&oh=00_AfN15SFSRnwToHPCqSuPRz1zvn_2gYn0stSjFjncqVyFeQ&oe=686A5C13',
+      ventas: 110
+    },
+    {
+      nombre: 'Ramo rosado',
+      img: 'https://scontent.flim31-1.fna.fbcdn.net/v/t39.30808-6/492148933_1252442266884177_7301925411048297623_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=106&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeEXch472Ps309vIrqDG0PKkptu4snDb5DKm27iycNvkMnVHTUCyi2S9IQY4RX1KRhm_twPCKe4Y6rkAHYLTM4ab&_nc_ohc=YZzB_0kmyCgQ7kNvwFhMzup&_nc_oc=AdklmHERvw7NftPZdiwWZD3S_QB4uZlEPDYpZumZxq1mZa93iGOnWwjwi7NeG8MRLJp6BRIXq-xTaf2Vrl_XneFa&_nc_zt=23&_nc_ht=scontent.flim31-1.fna&_nc_gid=aVHHs6qSeMMENzYn0AwaVw&oh=00_AfNNif7wmRZdHZofZdmBPQi1Sy5ySRHWhpA8Agli17iXyg&oe=686A3D87',
+      ventas: 105
+    },
+    {
+      nombre: 'Ramo primavera',
+      img: 'https://scontent.flim31-1.fna.fbcdn.net/v/t39.30808-6/491680176_1252453696883034_2444984827761800657_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=110&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeF4lZhkJ7Utj-mRZfiXAHlLRGhI9-k0GwBEaEj36TQbACvIwsSTR2drnT5mtWnkoYxzEUgPpQ7aZaUqjjSvi9xI&_nc_ohc=dmC7LI1HCpsQ7kNvwFvsUTQ&_nc_oc=Adm6DDbPVrpa1c2VHDDDus5A39gHb57hiU84rfOIY6yml0iMcfSHIpv1Jhp3h-niziLhr3oF1J4DCg2l6YQSZqwh&_nc_zt=23&_nc_ht=scontent.flim31-1.fna&_nc_gid=UgS_eedr5_awCjzTDCitMg&oh=00_AfMd7WRjBeev_HBEpjjK29MBM-_Odg3ZRtVu1hd3uS7_RQ&oe=686A71F3',
+      ventas: 100
+    }
+  ]
+
+  const ventasMensuales = Array.from({ length: 12 }, (_, i) => {
+    const mes = new Date(0, i).toLocaleString('es-PE', { month: 'short' })
+const total = ventas
+  .filter(
+    (v) =>
+      new Date(v.fecha).getMonth() === i &&
+      v.estado === 'Completada'
+  )
+  .reduce((acc, v) => acc + parseFloat(v.total), 0)
+
+    return { mes, ventas: total }
+  })
+
+  const estadoPedidos = [
+    { name: 'Completados', value: pedidos.filter(p => p.estado === 'completado').length },
+    { name: 'Pendientes', value: pedidos.filter(p => p.estado === 'pendiente').length },
+    { name: 'Cancelados', value: pedidos.filter(p => p.estado === 'cancelado').length }
+  ]
 
   return (
     <PageTransition>

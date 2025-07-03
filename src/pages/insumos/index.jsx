@@ -6,19 +6,22 @@ import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
+import { useDatos } from '../../context/DataSimuladaContext'
 
 export default function Insumos() {
+  const {
+    insumos,
+    agregarInsumo,
+    editarInsumo,
+    eliminarInsumo,
+  } = useDatos()
+
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [insumoEditando, setInsumoEditando] = useState(null)
   const [insumoEliminando, setInsumoEliminando] = useState(null)
   const [busqueda, setBusqueda] = useState('')
   const [filtro, setFiltro] = useState('Todos')
   const [orden, setOrden] = useState({ campo: 'codigo', direccion: 'asc' })
-
-  const [insumos, setInsumos] = useState([
-    { codigo: 'INS001', nombre: 'Lana rosada', unidad: 'metros', stock: 30, estado: 'Suficiente' },
-    { codigo: 'INS002', nombre: 'Hilo blanco', unidad: 'rollos', stock: 3, estado: 'Bajo' }
-  ])
 
   const [nuevoInsumo, setNuevoInsumo] = useState({
     nombre: '', unidad: '', stock: '', estado: 'Suficiente'
@@ -43,20 +46,17 @@ export default function Insumos() {
     if (!nombre || nombre.trim().length < 2) return toast.error('El nombre del insumo es muy corto.')
     if (!unidad || unidad.trim().length < 2) return toast.error('La unidad de medida es muy corta.')
     if (isNaN(stock) || Number(stock) < 0) return toast.error('El stock debe ser un número válido mayor o igual a 0.')
-    
-    
-    // VALIDACIÓN DE DUPLICADO
+
     const nombreNormalizado = nombre.trim().toLowerCase()
     const yaExiste = insumos.some(insumo => insumo.nombre.trim().toLowerCase() === nombreNormalizado)
     if (yaExiste) return toast.error('Ya existe un insumo con ese nombre.')
-    
+
     const estado = calcularEstado(stock)
 
     if (estado === 'Bajo') toast.warning('El insumo tiene poco stock.')
     if (estado === 'Sin stock') toast.error('El insumo está sin stock.')
 
-    const codigo = `INS${(insumos.length + 1).toString().padStart(3, '0')}`
-    setInsumos([...insumos, { ...nuevoInsumo, codigo, estado }])
+    agregarInsumo({ ...nuevoInsumo, estado })
     setNuevoInsumo({ nombre: '', unidad: '', stock: '', estado: 'Suficiente' })
     setMostrarFormulario(false)
     toast.success('Insumo agregado correctamente')
@@ -70,18 +70,13 @@ export default function Insumos() {
     if (!unidad || unidad.trim().length < 2) return toast.error('La unidad de medida es muy corta.')
     if (isNaN(stock) || Number(stock) < 0) return toast.error('El stock debe ser un número válido mayor o igual a 0.')
 
-    const estado = calcularEstado(stock)
-
-    if (estado === 'Bajo') toast.warning('Este insumo tiene poco stock.')
-    if (estado === 'Sin stock') toast.error('Este insumo está sin stock.')
-
-    setInsumos(insumos.map(i => i.codigo === insumoEditando.codigo ? { ...insumoEditando, estado } : i))
+    editarInsumo(insumoEditando)
     setInsumoEditando(null)
     toast.success('Insumo editado correctamente')
   }
 
   const handleEliminar = () => {
-    setInsumos(insumos.filter(i => i.codigo !== insumoEliminando.codigo))
+    eliminarInsumo(insumoEliminando.codigo)
     toast.success('Insumo eliminado correctamente')
     setInsumoEliminando(null)
   }
@@ -127,12 +122,7 @@ export default function Insumos() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="space-y-6"
-    >
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <h1 className="text-4xl font-bold text-brandPrimary">Insumos</h1>
         <button
@@ -146,18 +136,8 @@ export default function Insumos() {
 
       {/* Filtro y búsqueda */}
       <div className="flex flex-col sm:flex-row gap-4">
-        <input
-          type="text"
-          placeholder="Buscar por nombre o código"
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          className="w-full sm:w-1/2 p-2 border rounded-lg shadow"
-        />
-        <select
-          value={filtro}
-          onChange={(e) => setFiltro(e.target.value)}
-          className="w-full sm:w-1/4 p-2 border rounded-lg shadow"
-        >
+        <input type="text" placeholder="Buscar por nombre o código" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} className="w-full sm:w-1/2 p-2 border rounded-lg shadow" />
+        <select value={filtro} onChange={(e) => setFiltro(e.target.value)} className="w-full sm:w-1/4 p-2 border rounded-lg shadow">
           <option value="Todos">Todos</option>
           <option value="Suficiente">Suficiente</option>
           <option value="Bajo">Bajo</option>
@@ -165,45 +145,25 @@ export default function Insumos() {
         </select>
       </div>
 
-      {/* Botones de exportación */}
+      {/* Botones exportación */}
       <div className="flex flex-wrap gap-4 mt-2">
-        <button
-          onClick={exportarExcel}
-          className="px-4 py-2 bg-green-100 text-green-800 rounded hover:bg-green-200"
-        >
-          Exportar Excel
-        </button>
-        <button
-          onClick={exportarPDF}
-          className="px-4 py-2 bg-red-100 text-red-800 rounded hover:bg-red-200"
-        >
-          Exportar PDF
-        </button>
+        <button onClick={exportarExcel} className="px-4 py-2 bg-green-100 text-green-800 rounded hover:bg-green-200">Exportar Excel</button>
+        <button onClick={exportarPDF} className="px-4 py-2 bg-red-100 text-red-800 rounded hover:bg-red-200">Exportar PDF</button>
       </div>
 
-      {/* Tabla de insumos */}
+      {/* Tabla */}
       <div className="overflow-x-auto shadow rounded-xl">
         <table className="min-w-full bg-white text-sm rounded-xl">
           <thead className="bg-pastelPink text-gray-700">
-  <tr>
-    <th className="text-left px-4 py-3 cursor-pointer" onClick={() => ordenarPorColumna('codigo')}>
-      Código {orden.campo === 'codigo' && (orden.direccion === 'asc' ? '↑' : '↓')}
-    </th>
-    <th className="text-left px-4 py-3 cursor-pointer" onClick={() => ordenarPorColumna('nombre')}>
-      Insumo {orden.campo === 'nombre' && (orden.direccion === 'asc' ? '↑' : '↓')}
-    </th>
-    <th className="text-left px-4 py-3 cursor-pointer" onClick={() => ordenarPorColumna('unidad')}>
-      Unidad {orden.campo === 'unidad' && (orden.direccion === 'asc' ? '↑' : '↓')}
-    </th>
-    <th className="text-left px-4 py-3 cursor-pointer" onClick={() => ordenarPorColumna('stock')}>
-      Stock {orden.campo === 'stock' && (orden.direccion === 'asc' ? '↑' : '↓')}
-    </th>
-    <th className="text-left px-4 py-3 cursor-pointer" onClick={() => ordenarPorColumna('estado')}>
-      Estado {orden.campo === 'estado' && (orden.direccion === 'asc' ? '↑' : '↓')}
-    </th>
-    <th className="text-center px-4 py-3">Acciones</th>
-  </tr>
-</thead>
+            <tr>
+              {['codigo', 'nombre', 'unidad', 'stock', 'estado'].map(col => (
+                <th key={col} className="text-left px-4 py-3 cursor-pointer" onClick={() => ordenarPorColumna(col)}>
+                  {col.charAt(0).toUpperCase() + col.slice(1)} {orden.campo === col && (orden.direccion === 'asc' ? '↑' : '↓')}
+                </th>
+              ))}
+              <th className="text-center px-4 py-3">Acciones</th>
+            </tr>
+          </thead>
           <tbody>
             {filtrados.map((insumo, i) => (
               <tr key={i} className="border-b hover:bg-pastelCream transition">
@@ -213,22 +173,15 @@ export default function Insumos() {
                 <td className="px-4 py-3">{insumo.stock}</td>
                 <td className="px-4 py-3">
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    insumo.estado === 'Suficiente'
-                      ? 'bg-green-100 text-green-700'
-                      : insumo.estado === 'Bajo'
-                      ? 'bg-yellow-100 text-yellow-700'
-                      : 'bg-red-100 text-red-700'
+                    insumo.estado === 'Suficiente' ? 'bg-green-100 text-green-700' :
+                    insumo.estado === 'Bajo' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
                   }`}>
                     {insumo.estado}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-center flex justify-center gap-3">
-                  <button className="text-blue-500 hover:text-blue-700" onClick={() => setInsumoEditando(insumo)}>
-                    <FaEdit />
-                  </button>
-                  <button className="text-red-500 hover:text-red-700" onClick={() => setInsumoEliminando(insumo)}>
-                    <FaTrash />
-                  </button>
+                  <button className="text-blue-500 hover:text-blue-700" onClick={() => setInsumoEditando(insumo)}><FaEdit /></button>
+                  <button className="text-red-500 hover:text-red-700" onClick={() => setInsumoEliminando(insumo)}><FaTrash /></button>
                 </td>
               </tr>
             ))}
@@ -236,33 +189,19 @@ export default function Insumos() {
         </table>
       </div>
 
-      {/* Modal de registro */}
+      {/* Modal registro */}
       <AnimatePresence>
         {mostrarFormulario && (
-          <motion.div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md"
-              initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}>
+          <motion.div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}>
               <h2 className="text-2xl font-bold mb-4 text-brandPrimary">Registrar Insumo</h2>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <input type="text" name="nombre" value={nuevoInsumo.nombre} onChange={handleChange}
-                  placeholder="Nombre del insumo" className="w-full p-2 border rounded" required />
-                <input type="text" name="unidad" value={nuevoInsumo.unidad} onChange={handleChange}
-                  placeholder="Unidad de medida" className="w-full p-2 border rounded" required />
-                <input type="number" name="stock" value={nuevoInsumo.stock} onChange={handleChange}
-                  placeholder="Cantidad en stock" className="w-full p-2 border rounded" required />
-                <select name="estado" value={nuevoInsumo.estado} onChange={handleChange}
-                  className="w-full p-2 border rounded">
-                  <option value="Suficiente">Suficiente</option>
-                  <option value="Bajo">Bajo</option>
-                  <option value="Sin stock">Sin stock</option>
-                </select>
+                <input type="text" name="nombre" value={nuevoInsumo.nombre} onChange={handleChange} placeholder="Nombre del insumo" className="w-full p-2 border rounded" required />
+                <input type="text" name="unidad" value={nuevoInsumo.unidad} onChange={handleChange} placeholder="Unidad de medida" className="w-full p-2 border rounded" required />
+                <input type="number" name="stock" value={nuevoInsumo.stock} onChange={handleChange} placeholder="Cantidad en stock" className="w-full p-2 border rounded" required />
                 <div className="flex justify-end gap-3">
-                  <button type="button" onClick={() => setMostrarFormulario(false)}
-                    className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancelar</button>
-                  <button type="submit" className="px-4 py-2 bg-pastelPink rounded hover:bg-pastelBlue">
-                    Guardar
-                  </button>
+                  <button type="button" onClick={() => setMostrarFormulario(false)} className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancelar</button>
+                  <button type="submit" className="px-4 py-2 bg-pastelPink rounded hover:bg-pastelBlue">Guardar</button>
                 </div>
               </form>
             </motion.div>
@@ -270,43 +209,19 @@ export default function Insumos() {
         )}
       </AnimatePresence>
 
-      {/* Modal de edición */}
+      {/* Modal editar */}
       <AnimatePresence>
         {insumoEditando && (
-          <motion.div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md"
-              initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}>
+          <motion.div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}>
               <h2 className="text-2xl font-bold mb-4 text-brandPrimary">Editar Insumo</h2>
               <form onSubmit={handleEditarSubmit} className="space-y-4">
-                <input type="text" value={insumoEditando.nombre}
-                  onChange={(e) => setInsumoEditando({ ...insumoEditando, nombre: e.target.value })}
-                  placeholder="Nombre del insumo" className="w-full p-2 border rounded" required />
-                <input type="text" value={insumoEditando.unidad}
-                  onChange={(e) => setInsumoEditando({ ...insumoEditando, unidad: e.target.value })}
-                  placeholder="Unidad de medida" className="w-full p-2 border rounded" required />
-               <input
-  type="number"
-  value={insumoEditando.stock}
-  onChange={(e) => {
-    const nuevoStock = e.target.value
-    setInsumoEditando({
-      ...insumoEditando,
-      stock: nuevoStock,
-      estado: calcularEstado(nuevoStock)
-    })
-  }}
-  placeholder="Cantidad en stock"
-  className="w-full p-2 border rounded"
-  required
-/>
-      
+                <input type="text" value={insumoEditando.nombre} onChange={(e) => setInsumoEditando({ ...insumoEditando, nombre: e.target.value })} placeholder="Nombre del insumo" className="w-full p-2 border rounded" required />
+                <input type="text" value={insumoEditando.unidad} onChange={(e) => setInsumoEditando({ ...insumoEditando, unidad: e.target.value })} placeholder="Unidad de medida" className="w-full p-2 border rounded" required />
+                <input type="number" value={insumoEditando.stock} onChange={(e) => setInsumoEditando({ ...insumoEditando, stock: e.target.value, estado: calcularEstado(e.target.value) })} placeholder="Cantidad en stock" className="w-full p-2 border rounded" required />
                 <div className="flex justify-end gap-3">
-                  <button type="button" onClick={() => setInsumoEditando(null)}
-                    className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancelar</button>
-                  <button type="submit" className="px-4 py-2 bg-pastelPink rounded hover:bg-pastelBlue">
-                    Guardar cambios
-                  </button>
+                  <button type="button" onClick={() => setInsumoEditando(null)} className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancelar</button>
+                  <button type="submit" className="px-4 py-2 bg-pastelPink rounded hover:bg-pastelBlue">Guardar cambios</button>
                 </div>
               </form>
             </motion.div>
@@ -314,20 +229,16 @@ export default function Insumos() {
         )}
       </AnimatePresence>
 
-      {/* Modal de confirmación para eliminar */}
+      {/* Modal eliminar */}
       <AnimatePresence>
         {insumoEliminando && (
-          <motion.div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-sm text-center"
-              initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}>
+          <motion.div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-sm text-center" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}>
               <h3 className="text-xl font-semibold mb-4 text-red-600">¿Eliminar insumo?</h3>
               <p className="mb-6">Estás a punto de eliminar <strong>{insumoEliminando.nombre}</strong>.</p>
               <div className="flex justify-center gap-4">
-                <button onClick={() => setInsumoEliminando(null)}
-                  className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancelar</button>
-                <button onClick={handleEliminar}
-                  className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Eliminar</button>
+                <button onClick={() => setInsumoEliminando(null)} className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancelar</button>
+                <button onClick={handleEliminar} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Eliminar</button>
               </div>
             </motion.div>
           </motion.div>

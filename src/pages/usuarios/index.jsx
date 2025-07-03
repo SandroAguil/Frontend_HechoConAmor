@@ -1,65 +1,55 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-hot-toast'
+import { useDatos } from '../../context/DataSimuladaContext'
 
 export default function Usuarios() {
-  const [vendedores, setVendedores] = useState([
-    { correo: 'vendedor1@gmail.com', estado: 'activo', editando: false },
-    { correo: 'vendedor2@gmail.com', estado: 'bloqueado', editando: false }
-  ])
+  const {
+    usuarios,
+    agregarUsuario,
+    editarUsuario,
+    eliminarUsuario,
+    cambiarEstadoUsuario
+  } = useDatos()
+
   const [nuevoCorreo, setNuevoCorreo] = useState('')
   const [error, setError] = useState('')
   const [modalVisible, setModalVisible] = useState(false)
   const [correoAEliminar, setCorreoAEliminar] = useState(null)
+  const [editandoCorreo, setEditandoCorreo] = useState(null)
 
-const agregarVendedor = () => {
-  if (!nuevoCorreo.includes('@') || vendedores.some(v => v.correo === nuevoCorreo)) {
-    setError('Correo inválido o ya registrado.')
-    return
+  const agregarVendedor = () => {
+    if (!nuevoCorreo.includes('@') || usuarios.some(u => u.correo === nuevoCorreo)) {
+      setError('Correo inválido o ya registrado.')
+      return
+    }
+
+    agregarUsuario(nuevoCorreo)
+    setNuevoCorreo('')
+    setError('')
+    toast.success('✅ Usuario agregado correctamente.')
   }
 
-  const nuevoVendedor = {
-    correo: nuevoCorreo,
-    estado: 'activo',
-    editando: false
+  const iniciarEdicion = (correo) => {
+    setEditandoCorreo(correo)
   }
 
-  setVendedores([...vendedores, nuevoVendedor])
-  setNuevoCorreo('')
-  setError('')
-  toast.success('✅ Usuario agregado correctamente.')
-}
-
-
-  const iniciarEdicion = (index) => {
-    setVendedores(vendedores.map((v, i) =>
-      i === index ? { ...v, editando: true } : { ...v, editando: false }
-    ))
-  }
-
-  const guardarEdicion = (index, nuevoCorreo) => {
+  const guardarEdicion = (correoAnterior, nuevoCorreo) => {
     if (!nuevoCorreo.includes('@')) {
       toast.error('Correo inválido.')
       return
     }
-    setVendedores(vendedores.map((v, i) =>
-      i === index ? { ...v, correo: nuevoCorreo, editando: false } : v
-    ))
+    editarUsuario(correoAnterior, nuevoCorreo)
+    setEditandoCorreo(null)
     toast.success('Correo actualizado.')
   }
 
-  const cancelarEdicion = (index) => {
-    setVendedores(vendedores.map((v, i) =>
-      i === index ? { ...v, editando: false } : v
-    ))
+  const cancelarEdicion = () => {
+    setEditandoCorreo(null)
   }
 
-  const toggleEstado = (index) => {
-    setVendedores(vendedores.map((v, i) =>
-      i === index
-        ? { ...v, estado: v.estado === 'activo' ? 'bloqueado' : 'activo' }
-        : v
-    ))
+  const toggleEstado = (correo) => {
+    cambiarEstadoUsuario(correo)
   }
 
   const confirmarEliminacion = (correo) => {
@@ -68,7 +58,7 @@ const agregarVendedor = () => {
   }
 
   const eliminarVendedor = () => {
-    setVendedores(vendedores.filter(v => v.correo !== correoAEliminar))
+    eliminarUsuario(correoAEliminar)
     toast.success(`Usuario ${correoAEliminar} eliminado`)
     setModalVisible(false)
     setCorreoAEliminar(null)
@@ -96,7 +86,7 @@ const agregarVendedor = () => {
             onClick={agregarVendedor}
             className="bg-pastelBlue px-4 py-2 rounded hover:bg-pastelMint transition font-semibold"
           >
-            Agregar vendedor 
+            Agregar vendedor
           </button>
         </div>
         {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -110,49 +100,49 @@ const agregarVendedor = () => {
             </tr>
           </thead>
           <tbody>
-            {vendedores.map((v, index) => (
+            {usuarios.map((u, index) => (
               <tr key={index} className="border-t hover:bg-pastelCream">
                 <td className="px-4 py-2">
-                  {v.editando ? (
+                  {editandoCorreo === u.correo ? (
                     <input
                       type="email"
-                      defaultValue={v.correo}
+                      defaultValue={u.correo}
                       className="border rounded px-2 py-1 w-full"
-                      onBlur={(e) => guardarEdicion(index, e.target.value)}
+                      onBlur={(e) => guardarEdicion(u.correo, e.target.value)}
                       autoFocus
                     />
                   ) : (
-                    v.correo
+                    u.correo
                   )}
                 </td>
                 <td className="px-4 py-2">
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                      v.estado === 'activo'
+                      u.estado === 'activo'
                         ? 'bg-green-200 text-green-800'
                         : 'bg-red-200 text-red-800'
                     }`}
                   >
-                    {v.estado}
+                    {u.estado}
                   </span>
                 </td>
                 <td className="px-4 py-2 text-right space-x-2">
-                  {!v.editando ? (
+                  {editandoCorreo !== u.correo ? (
                     <>
                       <button
-                        onClick={() => iniciarEdicion(index)}
+                        onClick={() => iniciarEdicion(u.correo)}
                         className="text-blue-500 hover:text-blue-700"
                       >
                         Editar
                       </button>
                       <button
-                        onClick={() => toggleEstado(index)}
+                        onClick={() => toggleEstado(u.correo)}
                         className="text-yellow-500 hover:text-yellow-700"
                       >
-                        {v.estado === 'activo' ? 'Bloquear' : 'Desbloquear'}
+                        {u.estado === 'activo' ? 'Bloquear' : 'Desbloquear'}
                       </button>
                       <button
-                        onClick={() => confirmarEliminacion(v.correo)}
+                        onClick={() => confirmarEliminacion(u.correo)}
                         className="text-red-500 hover:text-red-700"
                       >
                         Eliminar
@@ -160,7 +150,7 @@ const agregarVendedor = () => {
                     </>
                   ) : (
                     <button
-                      onClick={() => cancelarEdicion(index)}
+                      onClick={cancelarEdicion}
                       className="text-gray-500 hover:text-gray-800"
                     >
                       Cancelar
@@ -205,8 +195,6 @@ const agregarVendedor = () => {
                 >
                   Eliminar
                 </button>
-                
-                
               </div>
             </motion.div>
           </motion.div>
