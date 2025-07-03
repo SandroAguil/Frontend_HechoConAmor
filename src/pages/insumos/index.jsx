@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FaPlus, FaEdit, FaTrash } from 'react-icons/fa'
+import { FaPlus, FaEdit, FaTrash, FaFilePdf, FaFileExcel } from 'react-icons/fa'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-toastify'
 import * as XLSX from 'xlsx'
@@ -9,19 +9,13 @@ import 'jspdf-autotable'
 import { useDatos } from '../../context/DataSimuladaContext'
 
 export default function Insumos() {
-  const {
-    insumos,
-    agregarInsumo,
-    editarInsumo,
-    eliminarInsumo,
-  } = useDatos()
+  const { insumos, agregarInsumo, editarInsumo, eliminarInsumo } = useDatos()
 
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [insumoEditando, setInsumoEditando] = useState(null)
   const [insumoEliminando, setInsumoEliminando] = useState(null)
   const [busqueda, setBusqueda] = useState('')
   const [filtro, setFiltro] = useState('Todos')
-  const [orden, setOrden] = useState({ campo: 'codigo', direccion: 'asc' })
 
   const [nuevoInsumo, setNuevoInsumo] = useState({
     nombre: '', unidad: '', stock: '', estado: 'Suficiente'
@@ -81,26 +75,8 @@ export default function Insumos() {
     setInsumoEliminando(null)
   }
 
-  const ordenarPorColumna = (campo) => {
-    const direccion = orden.campo === campo && orden.direccion === 'asc' ? 'desc' : 'asc'
-    setOrden({ campo, direccion })
-  }
-
-  const filtrados = [...insumos.filter(i => {
-    const coincideBusqueda = i.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-                             i.codigo.toLowerCase().includes(busqueda.toLowerCase())
-    const coincideEstado = filtro === 'Todos' || i.estado === filtro
-    return coincideBusqueda && coincideEstado
-  })].sort((a, b) => {
-    const valorA = a[orden.campo].toString().toLowerCase()
-    const valorB = b[orden.campo].toString().toLowerCase()
-    if (valorA < valorB) return orden.direccion === 'asc' ? -1 : 1
-    if (valorA > valorB) return orden.direccion === 'asc' ? 1 : -1
-    return 0
-  })
-
   const exportarExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(filtrados)
+    const worksheet = XLSX.utils.json_to_sheet(insumos)
     const workbook = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Insumos')
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
@@ -115,28 +91,31 @@ export default function Insumos() {
     doc.autoTable({
       startY: 30,
       head: [['Código', 'Nombre', 'Unidad', 'Stock', 'Estado']],
-      body: filtrados.map(i => [i.codigo, i.nombre, i.unidad, i.stock, i.estado]),
+      body: insumos.map(i => [i.codigo, i.nombre, i.unidad, i.stock, i.estado]),
       styles: { fontSize: 10 }
     })
     doc.save('insumos.pdf')
   }
 
+  const filtrados = insumos.filter(i => {
+    const coincideBusqueda = i.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+                             i.codigo.toLowerCase().includes(busqueda.toLowerCase())
+    const coincideEstado = filtro === 'Todos' || i.estado === filtro
+    return coincideBusqueda && coincideEstado
+  })
+
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h1 className="text-4xl font-bold text-brandPrimary">Insumos</h1>
-        <button
-          className="flex items-center gap-2 px-4 py-2 bg-pastelPink text-gray-800 rounded-lg shadow hover:bg-pastelBlue transition"
-          onClick={() => setMostrarFormulario(true)}
-        >
+        <h1 className="text-4xl font-bold text-[#6D6875]">Insumos</h1>
+        <button onClick={() => setMostrarFormulario(true)} className="flex items-center gap-2 px-4 py-2 bg-[#FFB4A2] text-white rounded-lg shadow hover:bg-[#FF8FAB] transition">
           <FaPlus />
           Registrar Insumo
         </button>
       </div>
 
-      {/* Filtro y búsqueda */}
       <div className="flex flex-col sm:flex-row gap-4">
-        <input type="text" placeholder="Buscar por nombre o código" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} className="w-full sm:w-1/2 p-2 border rounded-lg shadow" />
+        <input type="text" placeholder="Buscar..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} className="w-full sm:w-1/2 p-2 border rounded-lg shadow" />
         <select value={filtro} onChange={(e) => setFiltro(e.target.value)} className="w-full sm:w-1/4 p-2 border rounded-lg shadow">
           <option value="Todos">Todos</option>
           <option value="Suficiente">Suficiente</option>
@@ -145,63 +124,53 @@ export default function Insumos() {
         </select>
       </div>
 
-      {/* Botones exportación */}
-      <div className="flex flex-wrap gap-4 mt-2">
-        <button onClick={exportarExcel} className="px-4 py-2 bg-green-100 text-green-800 rounded hover:bg-green-200">Exportar Excel</button>
-        <button onClick={exportarPDF} className="px-4 py-2 bg-red-100 text-red-800 rounded hover:bg-red-200">Exportar PDF</button>
+      <div className="flex flex-wrap gap-3 mt-2">
+        <button onClick={exportarExcel} className="flex items-center gap-2 px-4 py-2 bg-green-200 text-green-800 rounded hover:bg-green-300">
+          <FaFileExcel /> Exportar Excel
+        </button>
+        <button onClick={exportarPDF} className="flex items-center gap-2 px-4 py-2 bg-red-200 text-red-800 rounded hover:bg-red-300">
+          <FaFilePdf /> Exportar PDF
+        </button>
       </div>
 
-      {/* Tabla */}
-      <div className="overflow-x-auto shadow rounded-xl">
-        <table className="min-w-full bg-white text-sm rounded-xl">
-          <thead className="bg-pastelPink text-gray-700">
-            <tr>
-              {['codigo', 'nombre', 'unidad', 'stock', 'estado'].map(col => (
-                <th key={col} className="text-left px-4 py-3 cursor-pointer" onClick={() => ordenarPorColumna(col)}>
-                  {col.charAt(0).toUpperCase() + col.slice(1)} {orden.campo === col && (orden.direccion === 'asc' ? '↑' : '↓')}
-                </th>
-              ))}
-              <th className="text-center px-4 py-3">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtrados.map((insumo, i) => (
-              <tr key={i} className="border-b hover:bg-pastelCream transition">
-                <td className="px-4 py-3">{insumo.codigo}</td>
-                <td className="px-4 py-3">{insumo.nombre}</td>
-                <td className="px-4 py-3">{insumo.unidad}</td>
-                <td className="px-4 py-3">{insumo.stock}</td>
-                <td className="px-4 py-3">
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    insumo.estado === 'Suficiente' ? 'bg-green-100 text-green-700' :
-                    insumo.estado === 'Bajo' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
-                  }`}>
-                    {insumo.estado}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-center flex justify-center gap-3">
-                  <button className="text-blue-500 hover:text-blue-700" onClick={() => setInsumoEditando(insumo)}><FaEdit /></button>
-                  <button className="text-red-500 hover:text-red-700" onClick={() => setInsumoEliminando(insumo)}><FaTrash /></button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Galería */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filtrados.map((insumo, i) => (
+          <motion.div key={i} whileHover={{ scale: 1.02 }} className="bg-white border border-gray-200 rounded-2xl p-4 shadow-md flex flex-col justify-between">
+
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold text-[#6D6875]">{insumo.nombre}</h2>
+              <p className="text-sm text-[#7B6F72]"><strong>Código:</strong> {insumo.codigo}</p>
+              <p className="text-sm text-[#7B6F72]"><strong>Unidad:</strong> {insumo.unidad}</p>
+              <p className="text-sm text-[#7B6F72]"><strong>Stock:</strong> {insumo.stock}</p>
+              <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
+                insumo.estado === 'Suficiente' ? 'bg-green-200 text-green-800' :
+                insumo.estado === 'Bajo' ? 'bg-yellow-200 text-yellow-800' : 'bg-red-200 text-red-800'
+              }`}>
+                {insumo.estado}
+              </span>
+            </div>
+            <div className="flex justify-end gap-3 mt-4">
+              <button className="text-blue-500 hover:text-blue-700" onClick={() => setInsumoEditando(insumo)}><FaEdit /></button>
+              <button className="text-red-500 hover:text-red-700" onClick={() => setInsumoEliminando(insumo)}><FaTrash /></button>
+            </div>
+          </motion.div>
+        ))}
       </div>
 
-      {/* Modal registro */}
+      {/* Modales */}
       <AnimatePresence>
         {mostrarFormulario && (
           <motion.div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <motion.div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}>
-              <h2 className="text-2xl font-bold mb-4 text-brandPrimary">Registrar Insumo</h2>
+              <h2 className="text-2xl font-bold mb-4 text-[#6D6875]">Registrar Insumo</h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <input type="text" name="nombre" value={nuevoInsumo.nombre} onChange={handleChange} placeholder="Nombre del insumo" className="w-full p-2 border rounded" required />
                 <input type="text" name="unidad" value={nuevoInsumo.unidad} onChange={handleChange} placeholder="Unidad de medida" className="w-full p-2 border rounded" required />
                 <input type="number" name="stock" value={nuevoInsumo.stock} onChange={handleChange} placeholder="Cantidad en stock" className="w-full p-2 border rounded" required />
                 <div className="flex justify-end gap-3">
                   <button type="button" onClick={() => setMostrarFormulario(false)} className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancelar</button>
-                  <button type="submit" className="px-4 py-2 bg-pastelPink rounded hover:bg-pastelBlue">Guardar</button>
+                  <button type="submit" className="px-4 py-2 bg-[#FFB4A2] text-white rounded hover:bg-[#FF8FAB]">Guardar</button>
                 </div>
               </form>
             </motion.div>
@@ -209,19 +178,18 @@ export default function Insumos() {
         )}
       </AnimatePresence>
 
-      {/* Modal editar */}
       <AnimatePresence>
         {insumoEditando && (
           <motion.div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <motion.div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}>
-              <h2 className="text-2xl font-bold mb-4 text-brandPrimary">Editar Insumo</h2>
+              <h2 className="text-2xl font-bold mb-4 text-[#6D6875]">Editar Insumo</h2>
               <form onSubmit={handleEditarSubmit} className="space-y-4">
                 <input type="text" value={insumoEditando.nombre} onChange={(e) => setInsumoEditando({ ...insumoEditando, nombre: e.target.value })} placeholder="Nombre del insumo" className="w-full p-2 border rounded" required />
                 <input type="text" value={insumoEditando.unidad} onChange={(e) => setInsumoEditando({ ...insumoEditando, unidad: e.target.value })} placeholder="Unidad de medida" className="w-full p-2 border rounded" required />
                 <input type="number" value={insumoEditando.stock} onChange={(e) => setInsumoEditando({ ...insumoEditando, stock: e.target.value, estado: calcularEstado(e.target.value) })} placeholder="Cantidad en stock" className="w-full p-2 border rounded" required />
                 <div className="flex justify-end gap-3">
                   <button type="button" onClick={() => setInsumoEditando(null)} className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancelar</button>
-                  <button type="submit" className="px-4 py-2 bg-pastelPink rounded hover:bg-pastelBlue">Guardar cambios</button>
+                  <button type="submit" className="px-4 py-2 bg-[#FFB4A2] text-white rounded hover:bg-[#FF8FAB]">Guardar cambios</button>
                 </div>
               </form>
             </motion.div>
@@ -229,7 +197,6 @@ export default function Insumos() {
         )}
       </AnimatePresence>
 
-      {/* Modal eliminar */}
       <AnimatePresence>
         {insumoEliminando && (
           <motion.div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>

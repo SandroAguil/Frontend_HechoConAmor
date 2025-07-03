@@ -66,15 +66,20 @@ export default function Login() {
           transition={{ duration: 0.6 }}
           className="w-full max-w-md space-y-6"
         >
-          <div className="flex flex-col items-center -mt-6">
+          <motion.div
+            initial={{ scale: 0.95 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', stiffness: 80, damping: 10 }}
+            className="flex flex-col items-center -mt-6"
+          >
             <img
               src="https://i.imgur.com/VTQsnCI.png"
               alt="Logo"
-              className="w-44 h-44 rounded-full mb-2"
+              className="w-44 h-44 rounded-full mb-2 border-4 border-pastelPink shadow-md"
             />
             <h1 className="text-2xl font-bold text-gray-800">Hecho con Amor</h1>
             <p className="text-sm text-gray-500">Bienvenido nuevamente</p>
-          </div>
+          </motion.div>
 
           <div className="space-y-2">
             <label className="block font-medium text-gray-700 text-sm">Correo electrónico</label>
@@ -102,12 +107,14 @@ export default function Login() {
 
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             type="submit"
             className="w-full bg-pastelPink hover:bg-pastelBlue text-gray-800 font-semibold py-2 rounded-lg transition"
           >
             Iniciar sesión
-          </button>
+          </motion.button>
 
           <p className="text-xs text-center text-gray-500 mt-2">
             © {new Date().getFullYear()} Hecho con Amor

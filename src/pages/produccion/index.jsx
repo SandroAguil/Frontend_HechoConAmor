@@ -1,16 +1,14 @@
 import { useState, useContext } from 'react'
-import { FaPlus, FaTrash, FaEdit } from 'react-icons/fa'
+import { FaPlus, FaTrash, FaEdit, FaBoxOpen, FaCheck, FaTimes } from 'react-icons/fa'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-toastify'
-import { DataSimuladaContext } from "../../context/DataSimuladaContext";
-
+import { DataSimuladaContext } from "../../context/DataSimuladaContext"
 
 export default function Produccion() {
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
-  const [ordenEliminando, setOrdenEliminando] = useState(null)
-  const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false)
   const [modoEdicion, setModoEdicion] = useState(false)
   const [ordenEditando, setOrdenEditando] = useState(null)
+  const [ordenEliminando, setOrdenEliminando] = useState(null)
   const [busqueda, setBusqueda] = useState('')
   const [filtro, setFiltro] = useState('Todos')
   const [insumosUsados, setInsumosUsados] = useState([])
@@ -59,21 +57,19 @@ export default function Produccion() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-
     if (modoEdicion && ordenEditando) {
       editarOrdenProduccion(ordenEditando, {
         ...nuevaOrden,
         insumos: insumosUsados
       })
-      toast.success("Orden actualizada correctamente")
+      toast.success('Orden actualizada correctamente')
     } else {
       agregarOrdenProduccion({
         ...nuevaOrden,
         insumos: insumosUsados
       })
-      toast.success("Orden de producción registrada")
+      toast.success('Orden de producción registrada')
     }
-
     setNuevaOrden({ producto: '', fecha: '', cantidad: '', estado: 'En curso' })
     setMostrarFormulario(false)
     setInsumosUsados([])
@@ -85,10 +81,20 @@ export default function Produccion() {
     const coincideBusqueda =
       o.producto.toLowerCase().includes(busqueda.toLowerCase()) ||
       o.codigo.toLowerCase().includes(busqueda.toLowerCase())
-    const coincideEstado =
-      filtro === 'Todos' || o.estado === filtro
+    const coincideEstado = filtro === 'Todos' || o.estado === filtro
     return coincideBusqueda && coincideEstado
   })
+
+  const getEstadoBadge = (estado) => {
+    switch (estado) {
+      case 'Finalizado':
+        return <span className="flex items-center gap-1 text-green-700 bg-green-100 px-2 py-1 rounded-full text-xs"><FaCheck /> Finalizado</span>
+      case 'Cancelado':
+        return <span className="flex items-center gap-1 text-red-700 bg-red-100 px-2 py-1 rounded-full text-xs"><FaTimes /> Cancelado</span>
+      default:
+        return <span className="flex items-center gap-1 text-yellow-700 bg-yellow-100 px-2 py-1 rounded-full text-xs"><FaBoxOpen /> En curso</span>
+    }
+  }
 
   return (
     <motion.div
@@ -97,14 +103,14 @@ export default function Produccion() {
       transition={{ duration: 0.4 }}
       className="space-y-6"
     >
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex justify-between items-center">
         <h1 className="text-4xl font-bold text-brandPrimary">Producción</h1>
         <button
-          className="flex items-center gap-2 px-4 py-2 bg-pastelMint text-gray-800 rounded-lg shadow hover:bg-pastelBlue transition"
           onClick={() => setMostrarFormulario(true)}
+          className="bg-pastelMint hover:bg-pastelBlue text-gray-800 px-4 py-2 rounded-full shadow flex items-center gap-2"
         >
           <FaPlus />
-          Nueva Orden
+          Orden
         </button>
       </div>
 
@@ -128,59 +134,76 @@ export default function Produccion() {
         </select>
       </div>
 
-      <div className="overflow-x-auto shadow rounded-xl">
-        <table className="min-w-full bg-white text-sm rounded-xl">
-          <thead className="bg-pastelMint text-gray-700">
-            <tr>
-              <th className="text-left px-4 py-3">Código</th>
-              <th className="text-left px-4 py-3">Producto</th>
-              <th className="text-left px-4 py-3">Fecha</th>
-              <th className="text-left px-4 py-3">Cantidad</th>
-              <th className="text-left px-4 py-3">Estado</th>
-              <th className="text-center px-4 py-3">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtradas.map((orden, i) => (
-              <tr key={i} className="border-b hover:bg-pastelCream transition">
-                <td className="px-4 py-3">{orden.codigo}</td>
-                <td className="px-4 py-3">{orden.producto}</td>
-                <td className="px-4 py-3">{orden.fecha}</td>
-                <td className="px-4 py-3">{orden.cantidad}</td>
-                <td className="px-4 py-3">
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    orden.estado === 'Finalizado'
-                      ? 'bg-green-100 text-green-700'
-                      : orden.estado === 'Cancelado'
-                      ? 'bg-red-100 text-red-700'
-                      : 'bg-yellow-100 text-yellow-700'
-                  }`}>
-                    {orden.estado}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-center flex justify-center gap-3">
-                  <button
-                    className="text-blue-600 hover:text-blue-800"
-                    onClick={() => iniciarEdicion(orden.codigo)}
-                  >
-                    <FaEdit />
-                  </button>
-                  <button
-                    className="text-red-500 hover:text-red-700"
-                    onClick={() => {
-                      eliminarOrdenProduccion(orden.codigo)
-                      toast.success("Orden eliminada correctamente")
-                    }}
-                  >
-                    <FaTrash />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {filtradas.map((orden, i) => (
+          <motion.div
+            key={i}
+            className="bg-white shadow-lg rounded-xl p-4 border border-gray-200"
+            whileHover={{ scale: 1.02 }}
+          >
+            <div className="flex justify-between items-center">
+              <h3 className="font-bold text-lg">{orden.producto}</h3>
+              <div className="flex gap-2">
+                <button onClick={() => iniciarEdicion(orden.codigo)} className="text-blue-600 hover:text-blue-800">
+                  <FaEdit />
+                </button>
+                <button
+                  onClick={() => setOrdenEliminando(orden)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <FaTrash />
+                </button>
+              </div>
+            </div>
+            <p className="text-sm text-gray-500">Código: {orden.codigo}</p>
+            <p className="text-sm">Fecha: {orden.fecha}</p>
+            <p className="text-sm">Cantidad: {orden.cantidad}</p>
+            <div className="mt-2">{getEstadoBadge(orden.estado)}</div>
+          </motion.div>
+        ))}
       </div>
 
+      {/* Modal de Confirmación de Eliminación */}
+      <AnimatePresence>
+        {ordenEliminando && (
+          <motion.div
+            className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white p-6 rounded-xl shadow-lg w-full max-w-sm text-center"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+            >
+              <h3 className="text-xl font-semibold mb-4 text-red-600">¿Eliminar orden?</h3>
+              <p className="mb-6">Estás a punto de eliminar <strong>{ordenEliminando.producto}</strong>.</p>
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={() => setOrdenEliminando(null)}
+                  className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    eliminarOrdenProduccion(ordenEliminando.codigo)
+                    toast.success("Orden eliminada correctamente")
+                    setOrdenEliminando(null)
+                  }}
+                  className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Formulario */}
       <AnimatePresence>
         {mostrarFormulario && (
           <motion.div
@@ -196,7 +219,7 @@ export default function Produccion() {
               exit={{ scale: 0.8, opacity: 0 }}
             >
               <h2 className="text-2xl font-bold mb-4 text-brandPrimary">
-                {modoEdicion ? "Editar Orden" : "Nueva Orden"}
+                {modoEdicion ? 'Editar Orden' : 'Nueva Orden'}
               </h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <input

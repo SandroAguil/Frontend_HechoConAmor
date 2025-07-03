@@ -1,24 +1,22 @@
-import { useEffect, useState } from 'react'
-import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa'
+import { useState } from 'react'
+import { FaEdit, FaTrash, FaTh, FaList, FaPlus } from 'react-icons/fa'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-toastify'
 import { Link } from 'react-router-dom'
-
-import ModalConfirmacion from './ModalConfirmacion'
-import FormularioProducto from './FormularioProducto' // Asegúrate de que este nombre coincida con tu archivo
 import { useDatos } from '../../context/DataSimuladaContext'
+import ModalConfirmacion from './ModalConfirmacion'
+import FormularioProducto from './FormularioProducto'
 
 export default function Productos() {
-  const [mostrarFormulario, setMostrarFormulario] = useState(false)
+  const [vista, setVista] = useState('galeria')
   const [busqueda, setBusqueda] = useState('')
   const [filtro, setFiltro] = useState('Todos')
-  const [idAEliminar, setIdAEliminar] = useState(null)
+  const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false)
+  const [idAEliminar, setIdAEliminar] = useState(null)
   const [cargando, setCargando] = useState(false)
 
-const { productos, agregarProducto, eliminarProducto } = useDatos()
-
-
+  const { productos, agregarProducto, eliminarProducto } = useDatos()
 
   const [nuevoProducto, setNuevoProducto] = useState({
     nombre: '',
@@ -37,120 +35,48 @@ const { productos, agregarProducto, eliminarProducto } = useDatos()
     return coincideBusqueda && coincideEstado
   })
 
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setNuevoProducto({ ...nuevoProducto, [name]: value })
-  }
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    setCargando(true)
-
-    const { nombre, precio, stock, categoria, imagen } = nuevoProducto
-    const nombreTrim = nombre.trim()
-    const categoriaTrim = categoria.trim()
-    const imagenTrim = imagen.trim()
-
-    if (!nombreTrim || !precio || !stock || !categoriaTrim || !imagenTrim) {
-      toast.error('Por favor, completa todos los campos.')
-      return setTimeout(() => setCargando(false), 1000)
-    }
-
-    if (nombreTrim.length < 3 || nombreTrim.length > 50) {
-      toast.error('El nombre debe tener entre 3 y 50 caracteres.')
-      return setTimeout(() => setCargando(false), 1000)
-    }
-
-    if (categoriaTrim.length < 3 || categoriaTrim.length > 50) {
-      toast.error('La categoría debe tener entre 3 y 50 caracteres.')
-      return setTimeout(() => setCargando(false), 1000)
-    }
-
-    if (isNaN(precio) || Number(precio) <= 0) {
-      toast.error('El precio debe ser un número mayor que cero.')
-      return setTimeout(() => setCargando(false), 1000)
-    }
-
-    if (isNaN(stock) || Number(stock) < 0) {
-      toast.error('El stock debe ser un número igual o mayor que cero.')
-      return setTimeout(() => setCargando(false), 1000)
-    }
-
-    try {
-      new URL(imagenTrim)
-    } catch {
-      toast.error('Ingresa una URL válida.')
-      return setTimeout(() => setCargando(false), 1000)
-    }
-
-    const yaExiste = productos.some(
-      (prod) =>
-        prod.nombre.trim().toLowerCase() === nombreTrim.toLowerCase()
-    )
-    if (yaExiste) {
-      toast.error('Ya existe un producto con ese nombre.')
-      return setTimeout(() => setCargando(false), 1000)
-    }
-
-    const id = Date.now()
-    const codigo = `PROD${(productos.length + 1)
-      .toString()
-      .padStart(3, '0')}`
-    const nuevo = {
-      ...nuevoProducto,
-      id,
-      codigo,
-      nombre: nombreTrim,
-      categoria: categoriaTrim,
-      imagen: imagenTrim,
-    }
-
-agregarProducto(nuevo)
-
-
-    setTimeout(() => {
-      setNuevoProducto({
-        nombre: '',
-        precio: '',
-        stock: '',
-        categoria: '',
-        estado: 'Disponible',
-        imagen: '',
-      })
-      setMostrarFormulario(false)
-      toast.success('Producto agregado correctamente')
-      setCargando(false)
-    }, 1500)
-  }
-
   const handleEliminar = () => {
     setCargando(true)
-eliminarProducto(idAEliminar)
-
+    eliminarProducto(idAEliminar)
     setTimeout(() => {
       toast.success('Producto eliminado correctamente')
       setMostrarConfirmacion(false)
       setIdAEliminar(null)
       setCargando(false)
-    }, 1500)
+    }, 1200)
   }
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.5 }}
       className="space-y-6"
     >
+      {/* Encabezado */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h1 className="text-4xl font-bold text-brandPrimary">Productos</h1>
-        <button
-          className="flex items-center gap-2 px-4 py-2 bg-pastelPink text-gray-800 rounded-lg shadow hover:bg-pastelBlue transition"
-          onClick={() => setMostrarFormulario(true)}
-        >
-          <FaPlus />
-          Agregar Producto
-        </button>
+        <h1 className="text-4xl font-bold text-brandPrimary">Gestión de Productos</h1>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setVista('lista')}
+            className={`p-2 rounded-lg shadow ${vista === 'lista' ? 'bg-blue-200' : 'bg-gray-100 hover:bg-gray-200'}`}
+          >
+            <FaList className="text-xl text-gray-700" />
+          </button>
+          <button
+            onClick={() => setVista('galeria')}
+            className={`p-2 rounded-lg shadow ${vista === 'galeria' ? 'bg-blue-200' : 'bg-gray-100 hover:bg-gray-200'}`}
+          >
+            <FaTh className="text-xl text-gray-700" />
+          </button>
+          <button
+            onClick={() => setMostrarFormulario(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg shadow hover:bg-green-600 transition"
+          >
+            <FaPlus />
+            Agregar Producto
+          </button>
+        </div>
       </div>
 
       {/* Filtro y búsqueda */}
@@ -160,12 +86,12 @@ eliminarProducto(idAEliminar)
           placeholder="Buscar por nombre o categoría"
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          className="w-full sm:w-1/2 p-2 border rounded-lg shadow"
+          className="w-full sm:w-1/2 p-2 border border-gray-300 rounded-lg shadow"
         />
         <select
           value={filtro}
           onChange={(e) => setFiltro(e.target.value)}
-          className="w-full sm:w-1/4 p-2 border rounded-lg shadow"
+          className="w-full sm:w-1/4 p-2 border border-gray-300 rounded-lg shadow"
         >
           <option value="Todos">Todos</option>
           <option value="Disponible">Disponible</option>
@@ -173,74 +99,124 @@ eliminarProducto(idAEliminar)
         </select>
       </div>
 
-      {/* Tabla de productos */}
-      <div className="overflow-x-auto shadow rounded-xl">
-        <table className="min-w-full bg-white text-sm rounded-xl">
-          <thead className="bg-pastelLavender text-gray-700">
-            <tr>
-              <th className="text-left px-4 py-3">Imagen</th>
-              <th className="text-left px-4 py-3">Código</th>
-              <th className="text-left px-4 py-3">Nombre</th>
-              <th className="text-left px-4 py-3">Precio</th>
-              <th className="text-left px-4 py-3">Stock</th>
-              <th className="text-left px-4 py-3">Categoría</th>
-              <th className="text-left px-4 py-3">Estado</th>
-              <th className="text-center px-4 py-3">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {productosFiltrados.map((prod) => (
-              <tr key={prod.id} className="border-b hover:bg-pastelMint transition">
-                <td className="px-4 py-3">
-                  <img
-                    src={prod.imagen}
-                    alt={prod.nombre}
-                    className="w-12 h-12 object-cover rounded shadow"
-                  />
-                </td>
-                <td className="px-4 py-3">{prod.codigo}</td>
-                <td className="px-4 py-3">{prod.nombre}</td>
-                <td className="px-4 py-3">S/ {prod.precio}</td>
-                <td className="px-4 py-3">{prod.stock}</td>
-                <td className="px-4 py-3">{prod.categoria}</td>
-                <td className="px-4 py-3">{prod.estado}</td>
-                <td className="px-4 py-3 text-center flex justify-center gap-3">
-                  <Link
-                    to={`/productos/editar/${prod.id}`}
-                    className="text-blue-500 hover:text-blue-700"
-                  >
-                    <FaEdit />
-                  </Link>
-                  <button
-                    className="text-red-500 hover:text-red-700"
-                    onClick={() => {
-                      setIdAEliminar(prod.id)
-                      setMostrarConfirmacion(true)
-                    }}
-                  >
-                    <FaTrash />
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {productosFiltrados.length === 0 && (
+      {/* Vista dinámica */}
+      {vista === 'lista' ? (
+        <div className="overflow-x-auto shadow rounded-xl">
+          <table className="min-w-full bg-white text-sm rounded-xl">
+            <thead className="bg-gray-100 text-gray-800 font-semibold">
               <tr>
-                <td colSpan="8" className="text-center py-6 text-gray-500">
-                  No se encontraron productos que coincidan con la búsqueda.
-                </td>
+                <th className="px-4 py-3 text-left">Imagen</th>
+                <th className="px-4 py-3 text-left">Código</th>
+                <th className="px-4 py-3 text-left">Nombre</th>
+                <th className="px-4 py-3 text-left">Precio</th>
+                <th className="px-4 py-3 text-left">Stock</th>
+                <th className="px-4 py-3 text-left">Categoría</th>
+                <th className="px-4 py-3 text-left">Estado</th>
+                <th className="px-4 py-3 text-center">Acciones</th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              <AnimatePresence>
+                {productosFiltrados.map((prod) => (
+                  <motion.tr
+                    key={prod.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.2 }}
+                    className="border-b hover:bg-gray-50"
+                  >
+                    <td className="px-4 py-3">
+                      <img src={prod.imagen} alt={prod.nombre} className="w-12 h-12 object-cover rounded" />
+                    </td>
+                    <td className="px-4 py-3">{prod.codigo}</td>
+                    <td className="px-4 py-3">{prod.nombre}</td>
+                    <td className="px-4 py-3">S/ {prod.precio}</td>
+                    <td className="px-4 py-3">{prod.stock}</td>
+                    <td className="px-4 py-3">{prod.categoria}</td>
+                    <td className="px-4 py-3">{prod.estado}</td>
+                    <td className="px-4 py-3 text-center flex justify-center gap-3">
+                      <Link to={`/productos/editar/${prod.id}`} className="text-blue-600 hover:text-blue-800">
+                        <FaEdit />
+                      </Link>
+                      <button
+                        className="text-red-600 hover:text-red-800"
+                        onClick={() => {
+                          setIdAEliminar(prod.id)
+                          setMostrarConfirmacion(true)
+                        }}
+                      >
+                        <FaTrash />
+                      </button>
+                    </td>
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <AnimatePresence>
+            {productosFiltrados.map((prod) => (
+              <motion.div
+                key={prod.id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3 }}
+                className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-transform"
+              >
+                <img src={prod.imagen} alt={prod.nombre} className="w-full h-40 object-cover" />
+                <div className="p-4 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold text-gray-800">{prod.nombre}</h3>
+                    <span className={`px-2 py-1 text-xs rounded-full font-medium ${prod.estado === 'Disponible' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{prod.estado}</span>
+                  </div>
+                  <p className="text-sm text-gray-600">Categoría: {prod.categoria}</p>
+                  <p className="text-sm font-bold text-blue-600">S/ {prod.precio}</p>
+                  <div className="flex justify-end gap-2 mt-2">
+                    <Link to={`/productos/editar/${prod.id}`} className="text-blue-600 hover:text-blue-800">
+                      <FaEdit />
+                    </Link>
+                    <button
+                      className="text-red-600 hover:text-red-800"
+                      onClick={() => {
+                        setIdAEliminar(prod.id)
+                        setMostrarConfirmacion(true)
+                      }}
+                    >
+                      <FaTrash />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
 
       {/* Modal agregar producto */}
       <AnimatePresence>
         {mostrarFormulario && (
           <FormularioProducto
             nuevoProducto={nuevoProducto}
-            handleChange={handleChange}
-            handleSubmit={handleSubmit}
+            handleChange={(e) => setNuevoProducto({ ...nuevoProducto, [e.target.name]: e.target.value })}
+            handleSubmit={(e) => {
+              e.preventDefault()
+              if (!nuevoProducto.nombre || !nuevoProducto.precio) {
+                toast.error('Completa todos los campos')
+                return
+              }
+              agregarProducto({
+                ...nuevoProducto,
+                id: Date.now(),
+                codigo: `PROD${(productos.length + 1).toString().padStart(3, '0')}`,
+              })
+              setMostrarFormulario(false)
+              setNuevoProducto({ nombre: '', precio: '', stock: '', categoria: '', estado: 'Disponible', imagen: '' })
+              toast.success('Producto agregado correctamente')
+            }}
             cargando={cargando}
             cerrar={() => setMostrarFormulario(false)}
           />
