@@ -1,5 +1,13 @@
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { toast } from 'react-toastify'
+import {
+  obtenerCategorias,
+  obtenerColores,
+  obtenerMateriales,
+  obtenerTamanios,
+  obtenerEstados,
+} from '../../services/catalogoService'
 import { crearProducto } from '../../services/productosService'
 
 export default function FormularioProducto({
@@ -10,47 +18,92 @@ export default function FormularioProducto({
   setCargando,
   cerrar,
 }) {
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setNuevoProducto((prev) => ({ ...prev, [name]: value }))
-  }
+  const [categorias, setCategorias] = useState([])
+  const [colores, setColores] = useState([])
+  const [materiales, setMateriales] = useState([])
+  const [tamanios, setTamanios] = useState([])
+  const [estados, setEstados] = useState([])
+
+  useEffect(() => {
+    const cargarDatos = async () => {
+      try {
+        const [
+          categoriasRes,
+          coloresRes,
+          materialesRes,
+          tamaniosRes,
+          estadosRes,
+        ] = await Promise.all([
+          obtenerCategorias(),
+          obtenerColores(),
+          obtenerMateriales(),
+          obtenerTamanios(),
+          obtenerEstados(),
+        ])
+        setCategorias(categoriasRes)
+        setColores(coloresRes)
+        setMateriales(materialesRes)
+        setTamanios(tamaniosRes)
+        setEstados(estadosRes)
+
+        // Puedes verificar si están vacíos:
+        if (
+          categoriasRes.length === 0 ||
+          coloresRes.length === 0 ||
+          materialesRes.length === 0 ||
+          tamaniosRes.length === 0 ||
+          estadosRes.length === 0
+        ) {
+          console.warn('⚠️ Algún catálogo vino vacío', {
+            categoriasRes, coloresRes, materialesRes, tamaniosRes, estadosRes
+          })
+        }
+
+      } catch (error) {
+        toast.error('Error al cargar catálogos')
+        console.error(error)
+      }
+    }
+
+    cargarDatos()
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-
     if (
-      !nuevoProducto.nombre ||
-      !nuevoProducto.precio ||
-      !nuevoProducto.stock ||
-      !nuevoProducto.categoria ||
-      !nuevoProducto.imagen
+      !nuevoProducto.name ||
+      !nuevoProducto.description ||
+      !nuevoProducto.price ||
+      !nuevoProducto.categoryId ||
+      !nuevoProducto.colorId ||
+      !nuevoProducto.materialId ||
+      !nuevoProducto.sizeId ||
+      !nuevoProducto.statusId
     ) {
-      toast.error('Completa todos los campos')
+      toast.error('Todos los campos son obligatorios')
       return
     }
 
-    try {
-      setCargando(true)
-      const productoConCodigo = {
-  ...nuevoProducto,
-  codigo: `PROD${Date.now()}` // o alguna lógica que tú quieras
-}
-await crearProducto(productoConCodigo)
+    const productoFormateado = {
+      name: nuevoProducto.name,
+      description: nuevoProducto.description,
+      price: parseFloat(nuevoProducto.price),
+      categoryId: parseInt(nuevoProducto.categoryId),
+      colorId: parseInt(nuevoProducto.colorId),
+      materialId: parseInt(nuevoProducto.materialId),
+      sizeId: parseInt(nuevoProducto.sizeId),
+      statusId: parseInt(nuevoProducto.statusId),
+    }
 
-      await crearProducto(nuevoProducto)
-      toast.success('Producto creado exitosamente')
+    setCargando(true)
+    try {
+      await crearProducto(productoFormateado)
+      toast.success('Producto agregado correctamente')
       onProductoCreado()
       cerrar()
-      setNuevoProducto({
-        nombre: '',
-        precio: '',
-        stock: '',
-        categoria: '',
-        estado: 'Disponible',
-        imagen: '',
-      })
     } catch (error) {
-      toast.error(error.message || 'Error al crear producto')
+      toast.error('Error al agregar producto')
+      console.error(error)
     } finally {
       setCargando(false)
     }
@@ -58,45 +111,140 @@ await crearProducto(productoConCodigo)
 
   return (
     <motion.div
+      initial={{ opacity: 0, y: -12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
       className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
     >
-      <motion.div
-        className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md"
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.8, opacity: 0 }}
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white rounded-xl shadow-xl p-6 w-full max-w-xl space-y-4 overflow-y-auto max-h-[90vh]"
       >
-        <h2 className="text-2xl font-bold mb-4 text-brandPrimary">Nuevo Producto</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input type="text" name="nombre" value={nuevoProducto.nombre} onChange={handleChange} placeholder="Nombre" className="w-full p-2 border rounded" required />
-          <input type="number" name="precio" value={nuevoProducto.precio} onChange={handleChange} placeholder="Precio" className="w-full p-2 border rounded" required />
-          <input type="number" name="stock" value={nuevoProducto.stock} onChange={handleChange} placeholder="Stock" className="w-full p-2 border rounded" required />
-          <input type="text" name="categoria" value={nuevoProducto.categoria} onChange={handleChange} placeholder="Categoría" className="w-full p-2 border rounded" required />
-          <input type="text" name="imagen" value={nuevoProducto.imagen} onChange={handleChange} placeholder="URL de la imagen" className="w-full p-2 border rounded" required />
-          <select name="estado" value={nuevoProducto.estado} onChange={handleChange} className="w-full p-2 border rounded">
-            <option value="Disponible">Disponible</option>
-            <option value="Agotado">Agotado</option>
-          </select>
-          <div className="flex justify-end gap-3">
-            <button type="button" onClick={cerrar} className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-pastelBlue rounded hover:bg-pastelMint flex items-center gap-2 justify-center"
-              disabled={cargando}
-            >
-              {cargando && (
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              )}
-              {cargando ? 'Guardando...' : 'Guardar'}
-            </button>
-          </div>
-        </form>
-      </motion.div>
+        <h2 className="text-2xl font-bold">Agregar Producto</h2>
+
+        <input
+          type="text"
+          placeholder="Nombre"
+          value={nuevoProducto.name}
+          onChange={(e) =>
+            setNuevoProducto({ ...nuevoProducto, name: e.target.value })
+          }
+          className="w-full p-2 border rounded-lg"
+        />
+
+        <textarea
+          placeholder="Descripción"
+          value={nuevoProducto.description}
+          onChange={(e) =>
+            setNuevoProducto({ ...nuevoProducto, description: e.target.value })
+          }
+          className="w-full p-2 border rounded-lg"
+        />
+
+        <input
+          type="number"
+          placeholder="Precio"
+          value={nuevoProducto.price}
+          onChange={(e) =>
+            setNuevoProducto({ ...nuevoProducto, price: e.target.value })
+          }
+          className="w-full p-2 border rounded-lg"
+        />
+
+        {/* Select dinámicos */}
+        <select
+          value={nuevoProducto.categoryId}
+          onChange={(e) =>
+            setNuevoProducto({ ...nuevoProducto, categoryId: e.target.value })
+          }
+          className="w-full p-2 border rounded-lg"
+        >
+          <option value="">Seleccione categoría</option>
+          {categorias.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={nuevoProducto.colorId}
+          onChange={(e) =>
+            setNuevoProducto({ ...nuevoProducto, colorId: e.target.value })
+          }
+          className="w-full p-2 border rounded-lg"
+        >
+          <option value="">Seleccione color</option>
+          {colores.map((color) => (
+            <option key={color.id} value={color.id}>
+              {color.name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={nuevoProducto.materialId}
+          onChange={(e) =>
+            setNuevoProducto({ ...nuevoProducto, materialId: e.target.value })
+          }
+          className="w-full p-2 border rounded-lg"
+        >
+          <option value="">Seleccione material</option>
+          {materiales.map((mat) => (
+            <option key={mat.id} value={mat.id}>
+              {mat.name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={nuevoProducto.sizeId}
+          onChange={(e) =>
+            setNuevoProducto({ ...nuevoProducto, sizeId: e.target.value })
+          }
+          className="w-full p-2 border rounded-lg"
+        >
+          <option value="">Seleccione tamaño</option>
+          {tamanios.map((size) => (
+            <option key={size.id} value={size.id}>
+              {size.name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={nuevoProducto.statusId}
+          onChange={(e) =>
+            setNuevoProducto({ ...nuevoProducto, statusId: e.target.value })
+          }
+          className="w-full p-2 border rounded-lg"
+        >
+          <option value="">Seleccione estado</option>
+          {estados.map((est) => (
+            <option key={est.id} value={est.id}>
+              {est.name}
+            </option>
+          ))}
+        </select>
+
+        {/* Botones */}
+        <div className="flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={cerrar}
+            className="px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={cargando}
+            className="px-4 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:opacity-50"
+          >
+            {cargando ? 'Guardando...' : 'Guardar'}
+          </button>
+        </div>
+      </form>
     </motion.div>
   )
 }
