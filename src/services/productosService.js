@@ -1,62 +1,42 @@
-const BASE_URL = 'https://rest-api-hechoconamor.onrender.com/api/v1/products'
+// src/services/productosService.js
 
-// Obtener todos los productos
+const API_URL = 'https://rest-api-hechoconamor.onrender.com/api/v1/products' // Actualiza si tu backend tiene otra URL
+
 export async function obtenerProductos() {
-  const res = await fetch(BASE_URL)
-  const data = await res.json()
-
-  if (!res.ok) {
-    throw new Error(data.message || 'Error al obtener productos')
-  }
-
-  return data
+  const res = await fetch(API_URL)
+  if (!res.ok) throw new Error('Error al obtener productos')
+  return res.json()
 }
 
-// Luego vienen las funciones
+export async function obtenerProductoPorId(id) {
+  const res = await fetch(`${API_URL}/${id}`)
+  if (!res.ok) throw new Error('Error al obtener producto')
+  return res.json()
+}
+
 export async function crearProducto(producto) {
-  const res = await fetch(BASE_URL, {
+  const res = await fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(producto),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || 'Error al crear producto');
-  }
-
-  return data;
-}
-
-// Eliminar producto por ID
-export async function eliminarProductoPorId(id) {
-  const res = await fetch(`${BASE_URL}/${id}`, {
-    method: 'DELETE',
   })
-
-  if (!res.ok) throw new Error('Error al eliminar producto')
-  return true
+  if (!res.ok) throw new Error('Error al crear producto')
+  return res.json()
 }
 
-// Actualizar producto por ID
-export async function actualizarProducto(id, productoActualizado) {
-  const res = await fetch(`${BASE_URL}/${id}`, {
+export async function actualizarProducto(id, producto) {
+  const res = await fetch(`${API_URL}/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(productoActualizado),
+    body: JSON.stringify(producto),
   })
-
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.message || 'Error al actualizar producto')
-  return data
+  if (!res.ok) throw new Error('Error al actualizar producto')
+  return res.json()
 }
 
-// Obtener producto por ID
-export async function obtenerProductoPorId(id) {
-  const res = await fetch(`${BASE_URL}/id/${id}`)
-  const data = await res.json()
-
-  if (!res.ok) throw new Error(data.message || 'Error al obtener producto')
-  return data
+export async function eliminarProducto(id) {
+  const res = await fetch(`${API_URL}/${id}`, {
+    method: 'DELETE',
+  })
+  if (!res.ok) throw new Error('Error al eliminar producto')
 }

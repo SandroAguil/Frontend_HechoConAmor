@@ -1,31 +1,27 @@
-import { useState, useEffect } from 'react'
-import { FaEdit, FaTrash, FaTh, FaList, FaPlus } from 'react-icons/fa'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-toastify'
-import { Link } from 'react-router-dom'
-import ModalConfirmacion from './ModalConfirmacion'
-import FormularioProducto from './FormularioProducto'
+import { FaPlus } from 'react-icons/fa'
 import TablaProductos from './TablaProductos'
+import FormularioProducto from './FormularioProducto'
+import ModalConfirmacion from './ModalConfirmacion'
 import {
   obtenerProductos,
-  eliminarProductoPorId
+  eliminarProducto,
 } from '../../services/productosService'
 
-export default function Productos() {
-  const [vista, setVista] = useState('galeria')
-  const [busqueda, setBusqueda] = useState('')
-  const [filtro, setFiltro] = useState('Todos')
+export default function ProductosPage() {
+  const [productos, setProductos] = useState([])
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false)
   const [idAEliminar, setIdAEliminar] = useState(null)
+  const [busqueda, setBusqueda] = useState('')
+  const [filtro, setFiltro] = useState('Todos')
   const [cargando, setCargando] = useState(false)
-  const [productos, setProductos] = useState([])
-
   const [nuevoProducto, setNuevoProducto] = useState({
     name: '',
     description: '',
     price: '',
-    stock: '',
     categoryId: '',
     colorId: '',
     materialId: '',
@@ -48,13 +44,13 @@ export default function Productos() {
   }, [])
 
   const handleEliminar = async () => {
+    if (!idAEliminar) return
     setCargando(true)
     try {
-      await eliminarProductoPorId(idAEliminar)
+      await eliminarProducto(idAEliminar)
       toast.success('Producto eliminado correctamente')
+      setProductos(productos.filter((p) => p.id !== idAEliminar))
       setMostrarConfirmacion(false)
-      setIdAEliminar(null)
-      await cargarProductos()
     } catch (error) {
       toast.error('Error al eliminar producto')
       console.error(error)
@@ -63,128 +59,46 @@ export default function Productos() {
     }
   }
 
-  const productosFiltrados = productos.filter((prod) => {
-    const coincideBusqueda =
-      prod.name?.toLowerCase().includes(busqueda.toLowerCase()) ||
-      prod.category?.name?.toLowerCase().includes(busqueda.toLowerCase())
-
-    const coincideEstado = filtro === 'Todos' || prod.status?.name === filtro
-
-    return coincideBusqueda && coincideEstado
-  })
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="space-y-6"
-    >
-      {/* Encabezado */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h1 className="text-4xl font-bold text-brandPrimary">Gestión de Productos</h1>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setVista('lista')}
-            className={`p-2 rounded-lg shadow ${vista === 'lista' ? 'bg-blue-200' : 'bg-gray-100 hover:bg-gray-200'}`}
-          >
-            <FaList className="text-xl text-gray-700" />
-          </button>
-          <button
-            onClick={() => setVista('galeria')}
-            className={`p-2 rounded-lg shadow ${vista === 'galeria' ? 'bg-blue-200' : 'bg-gray-100 hover:bg-gray-200'}`}
-          >
-            <FaTh className="text-xl text-gray-700" />
-          </button>
-          <button
-            onClick={() => setMostrarFormulario(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg shadow hover:bg-green-600 transition"
-          >
-            <FaPlus />
-            Agregar Producto
-          </button>
-        </div>
+    <div className="p-6 space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+        <h1 className="text-3xl font-bold text-pastelLavender">Productos</h1>
+        <button
+          onClick={() => setMostrarFormulario(true)}
+          className="bg-green-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-600"
+        >
+          <FaPlus /> Agregar
+        </button>
       </div>
 
-      {/* Filtro y búsqueda */}
       <div className="flex flex-col sm:flex-row gap-4">
         <input
           type="text"
-          placeholder="Buscar por nombre o categoría"
+          placeholder="Buscar productos..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          className="w-full sm:w-1/2 p-2 border border-gray-300 rounded-lg shadow"
+          className="w-full sm:w-1/2 p-2 border rounded-lg"
         />
         <select
           value={filtro}
           onChange={(e) => setFiltro(e.target.value)}
-          className="w-full sm:w-1/4 p-2 border border-gray-300 rounded-lg shadow"
+          className="p-2 border rounded-lg"
         >
           <option value="Todos">Todos</option>
           <option value="Disponible">Disponible</option>
           <option value="Agotado">Agotado</option>
+          <option value="Descontinuado">Descontinuado</option>
         </select>
       </div>
 
-      {/* Vista dinámica */}
-      {vista === 'lista' ? (
-        <TablaProductos
-          productos={productos}
-          busqueda={busqueda}
-          filtro={filtro}
-          setIdAEliminar={setIdAEliminar}
-          setMostrarConfirmacion={setMostrarConfirmacion}
-        />
-      ) : (
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          <AnimatePresence>
-            {productosFiltrados.map((prod) => (
-              <motion.div
-                key={prod.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.3 }}
-                className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-transform"
-              >
-                <img src={prod.image || ''} alt={prod.name} className="w-full h-40 object-cover" />
-                <div className="p-4 space-y-2">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold text-gray-800">{prod.name}</h3>
-                    <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                      prod.status?.name === 'Disponible'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-red-100 text-red-700'
-                    }`}>
-                      {prod.status?.name || 'Sin estado'}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Categoría: {prod.category?.name || 'Sin categoría'}
-                  </p>
-                  <p className="text-sm font-bold text-blue-600">S/ {prod.price}</p>
-                  <div className="flex justify-end gap-2 mt-2">
-                    <Link to={`/productos/editar/${prod.id}`} className="text-blue-600 hover:text-blue-800">
-                      <FaEdit />
-                    </Link>
-                    <button
-                      className="text-red-600 hover:text-red-800"
-                      onClick={() => {
-                        setIdAEliminar(prod.id)
-                        setMostrarConfirmacion(true)
-                      }}
-                    >
-                      <FaTrash />
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-      )}
+      <TablaProductos
+        productos={productos}
+        busqueda={busqueda}
+        filtro={filtro}
+        setIdAEliminar={setIdAEliminar}
+        setMostrarConfirmacion={setMostrarConfirmacion}
+      />
 
-      {/* Modal agregar producto */}
       <AnimatePresence>
         {mostrarFormulario && (
           <FormularioProducto
@@ -193,24 +107,32 @@ export default function Productos() {
             onProductoCreado={cargarProductos}
             cargando={cargando}
             setCargando={setCargando}
-            cerrar={() => setMostrarFormulario(false)}
+            cerrar={() => {
+              setMostrarFormulario(false)
+              setNuevoProducto({
+                name: '',
+                description: '',
+                price: '',
+                categoryId: '',
+                colorId: '',
+                materialId: '',
+                sizeId: '',
+                statusId: '',
+              })
+            }}
           />
         )}
       </AnimatePresence>
 
-      {/* Modal confirmación eliminar */}
       <AnimatePresence>
         {mostrarConfirmacion && (
           <ModalConfirmacion
-            onCancelar={() => {
-              setMostrarConfirmacion(false)
-              setIdAEliminar(null)
-            }}
+            onCancelar={() => setMostrarConfirmacion(false)}
             onEliminar={handleEliminar}
             cargando={cargando}
           />
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   )
 }

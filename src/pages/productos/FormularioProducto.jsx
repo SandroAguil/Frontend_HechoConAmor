@@ -27,38 +27,19 @@ export default function FormularioProducto({
   useEffect(() => {
     const cargarDatos = async () => {
       try {
-        const [
-          categoriasRes,
-          coloresRes,
-          materialesRes,
-          tamaniosRes,
-          estadosRes,
-        ] = await Promise.all([
-          obtenerCategorias(),
-          obtenerColores(),
-          obtenerMateriales(),
-          obtenerTamanios(),
-          obtenerEstados(),
-        ])
+        const [categoriasRes, coloresRes, materialesRes, tamaniosRes, estadosRes] =
+          await Promise.all([
+            obtenerCategorias(),
+            obtenerColores(),
+            obtenerMateriales(),
+            obtenerTamanios(),
+            obtenerEstados(),
+          ])
         setCategorias(categoriasRes)
         setColores(coloresRes)
         setMateriales(materialesRes)
         setTamanios(tamaniosRes)
         setEstados(estadosRes)
-
-        // Puedes verificar si están vacíos:
-        if (
-          categoriasRes.length === 0 ||
-          coloresRes.length === 0 ||
-          materialesRes.length === 0 ||
-          tamaniosRes.length === 0 ||
-          estadosRes.length === 0
-        ) {
-          console.warn('⚠️ Algún catálogo vino vacío', {
-            categoriasRes, coloresRes, materialesRes, tamaniosRes, estadosRes
-          })
-        }
-
       } catch (error) {
         toast.error('Error al cargar catálogos')
         console.error(error)
@@ -70,18 +51,17 @@ export default function FormularioProducto({
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (
-      !nuevoProducto.name ||
-      !nuevoProducto.description ||
-      !nuevoProducto.price ||
-      !nuevoProducto.categoryId ||
-      !nuevoProducto.colorId ||
-      !nuevoProducto.materialId ||
-      !nuevoProducto.sizeId ||
-      !nuevoProducto.statusId
-    ) {
-      toast.error('Todos los campos son obligatorios')
-      return
+
+    const camposObligatorios = [
+      'name', 'description', 'price',
+      'categoryId', 'colorId', 'materialId', 'sizeId', 'statusId',
+    ]
+
+    for (const campo of camposObligatorios) {
+      if (!nuevoProducto[campo]) {
+        toast.error('Todos los campos son obligatorios')
+        return
+      }
     }
 
     const productoFormateado = {
@@ -151,7 +131,6 @@ export default function FormularioProducto({
           className="w-full p-2 border rounded-lg"
         />
 
-        {/* Select dinámicos */}
         <select
           value={nuevoProducto.categoryId}
           onChange={(e) =>
@@ -227,7 +206,6 @@ export default function FormularioProducto({
           ))}
         </select>
 
-        {/* Botones */}
         <div className="flex justify-end gap-3">
           <button
             type="button"
