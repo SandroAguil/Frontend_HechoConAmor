@@ -53,7 +53,7 @@ export default function FormularioProducto({
     e.preventDefault()
 
     const camposObligatorios = [
-      'name', 'description', 'price',
+      'name', 'description', 'price', 'imageUrl',
       'categoryId', 'colorId', 'materialId', 'sizeId', 'statusId',
     ]
 
@@ -68,6 +68,7 @@ export default function FormularioProducto({
       name: nuevoProducto.name,
       description: nuevoProducto.description,
       price: parseFloat(nuevoProducto.price),
+      imageUrl: nuevoProducto.imageUrl,
       categoryId: parseInt(nuevoProducto.categoryId),
       colorId: parseInt(nuevoProducto.colorId),
       materialId: parseInt(nuevoProducto.materialId),
@@ -79,6 +80,15 @@ export default function FormularioProducto({
     try {
       await crearProducto(productoFormateado)
       toast.success('Producto agregado correctamente')
+
+      // Guardar imagen en localStorage para persistencia visual
+      const productosLocales = JSON.parse(localStorage.getItem('productosLocales') || '[]')
+      productosLocales.push({
+        id: Date.now(), // id temporal
+        ...productoFormateado
+      })
+      localStorage.setItem('productosLocales', JSON.stringify(productosLocales))
+
       onProductoCreado()
       cerrar()
     } catch (error) {
@@ -127,6 +137,16 @@ export default function FormularioProducto({
           value={nuevoProducto.price}
           onChange={(e) =>
             setNuevoProducto({ ...nuevoProducto, price: e.target.value })
+          }
+          className="w-full p-2 border rounded-lg"
+        />
+
+        <input
+          type="text"
+          placeholder="URL de la imagen"
+          value={nuevoProducto.imageUrl}
+          onChange={(e) =>
+            setNuevoProducto({ ...nuevoProducto, imageUrl: e.target.value })
           }
           className="w-full p-2 border rounded-lg"
         />

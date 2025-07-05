@@ -41,7 +41,7 @@ export default function TablaProductos({
             <tr key={prod.id} className="border-b hover:bg-pastelMint transition">
               <td className="px-4 py-3">
                 <img
-                  src={prod.image || 'https://via.placeholder.com/50'}
+                  src={prod.imageUrl || 'https://via.placeholder.com/50'}
                   alt={prod.name}
                   className="w-12 h-12 object-cover rounded shadow"
                 />
@@ -49,7 +49,7 @@ export default function TablaProductos({
               <td className="px-4 py-3">{prod.id}</td>
               <td className="px-4 py-3">{prod.name}</td>
               <td className="px-4 py-3">S/ {prod.price}</td>
-              <td className="px-4 py-3">{prod.stock}</td>
+              <td className="px-4 py-3">{prod.stock ?? '0'}</td>
               <td className="px-4 py-3">{prod.category || 'Sin categoría'}</td>
               <td className="px-4 py-3">{prod.color || 'Sin color'}</td>
               <td className="px-4 py-3">{prod.material || 'Sin material'}</td>
