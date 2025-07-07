@@ -15,3 +15,5 @@ export default function Dashboard() {
 
   return <div>No tienes acceso al dashboard</div>
 }
+
+// Cambio mínimo para hacer commit y guardar versión
